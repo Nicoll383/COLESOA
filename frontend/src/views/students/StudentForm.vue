@@ -21,10 +21,50 @@
         {{ error }}
       </div>
 
+      <!-- Progress Steps -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div
+            v-for="step in steps"
+            :key="step.number"
+            class="flex-1 flex items-center"
+          >
+            <div class="flex flex-col items-center flex-1">
+              <div
+                :class="{
+                  'bg-blue-600 text-white': currentStep >= step.number,
+                  'bg-gray-300 text-gray-600': currentStep < step.number
+                }"
+                class="w-12 h-12 rounded-full flex items-center justify-center font-bold mb-2"
+              >
+                {{ step.number }}
+              </div>
+              <span
+                :class="{
+                  'text-blue-600 font-semibold': currentStep === step.number,
+                  'text-gray-600': currentStep !== step.number
+                }"
+                class="text-sm text-center"
+              >
+                {{ step.title }}
+              </span>
+            </div>
+            <div
+              v-if="step.number < steps.length"
+              :class="{
+                'bg-blue-600': currentStep > step.number,
+                'bg-gray-300': currentStep <= step.number
+              }"
+              class="h-1 flex-1 mx-2"
+            ></div>
+          </div>
+        </div>
+      </div>
+
       <form @submit.prevent="handleSubmit">
-        <!-- SECCIÓN 1: Datos Personales -->
-        <div class="card mb-6">
-          <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <!-- PASO 1: Datos Personales -->
+        <div v-show="currentStep === 1" class="card">
+          <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
             <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
             Datos Personales
           </h3>
@@ -110,35 +150,6 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Distrito</label>
-              <input
-                v-model="form.distrito"
-                type="text"
-                class="form-input"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Provincia</label>
-              <input
-                v-model="form.provincia"
-                type="text"
-                class="form-input"
-                value="Lima"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Departamento</label>
-              <input
-                v-model="form.departamento"
-                type="text"
-                class="form-input"
-                value="Lima"
-              />
-            </div>
-
-            <div class="form-group">
               <label class="form-label">Estado</label>
               <select v-model="form.estado" class="form-input">
                 <option value="activo">Activo</option>
@@ -149,9 +160,9 @@
           </div>
         </div>
 
-        <!-- SECCIÓN 2: Información Médica -->
-        <div class="card mb-6">
-          <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <!-- PASO 2: Información Médica -->
+        <div v-show="currentStep === 2" class="card">
+          <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
             <span class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
             Información Médica
           </h3>
@@ -225,35 +236,6 @@
             </div>
 
             <div class="form-group md:col-span-2">
-              <label class="form-label">Medicamentos Regulares</label>
-              <textarea
-                v-model="form.informacion_medica.medicamentos_regulares"
-                class="form-input"
-                rows="2"
-                placeholder="Medicamentos que toma regularmente..."
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Seguro Médico</label>
-              <input
-                v-model="form.informacion_medica.seguro_medico"
-                type="text"
-                class="form-input"
-                placeholder="Ej: SIS, EsSalud, Pacífico"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Número de Seguro</label>
-              <input
-                v-model="form.informacion_medica.numero_seguro"
-                type="text"
-                class="form-input"
-              />
-            </div>
-
-            <div class="form-group md:col-span-2">
               <h4 class="font-semibold mb-3 text-red-600">Contacto de Emergencia</h4>
             </div>
 
@@ -286,21 +268,12 @@
                 placeholder="Ej: Padre, Madre, Tío, etc."
               />
             </div>
-
-            <div class="form-group md:col-span-2">
-              <label class="form-label">Observaciones Médicas</label>
-              <textarea
-                v-model="form.informacion_medica.observaciones_medicas"
-                class="form-input"
-                rows="2"
-              ></textarea>
-            </div>
           </div>
         </div>
 
-        <!-- SECCIÓN 3: Apoderados -->
-        <div class="card mb-6">
-          <div class="flex justify-between items-center mb-4">
+        <!-- PASO 3: Apoderados -->
+        <div v-show="currentStep === 3" class="card">
+          <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-semibold flex items-center gap-2">
               <span class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm">3</span>
               Apoderados
@@ -335,12 +308,24 @@
 
               <div class="form-group">
                 <label class="form-label">DNI</label>
-                <input
-                  v-model="apoderado.dni"
-                  type="text"
-                  maxlength="8"
-                  class="form-input"
-                />
+                <div class="flex gap-2">
+                  <input
+                    v-model="apoderado.dni"
+                    type="text"
+                    maxlength="8"
+                    class="form-input"
+                    @blur="consultarReniec(apoderado)"
+                  />
+                  <button
+                    type="button"
+                    @click="consultarReniec(apoderado)"
+                    :disabled="loadingReniec[index]"
+                    class="btn btn-sm btn-primary"
+                  >
+                    {{ loadingReniec[index] ? '...' : 'Buscar' }}
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Ingresa DNI y presiona Buscar</p>
               </div>
 
               <div class="form-group">
@@ -349,6 +334,7 @@
                   v-model="apoderado.nombres"
                   type="text"
                   class="form-input"
+                  :disabled="loadingReniec[index]"
                 />
               </div>
 
@@ -358,6 +344,7 @@
                   v-model="apoderado.apellidos"
                   type="text"
                   class="form-input"
+                  :disabled="loadingReniec[index]"
                 />
               </div>
 
@@ -400,9 +387,9 @@
           </div>
         </div>
 
-        <!-- SECCIÓN 4: Foto del Estudiante -->
-        <div class="card mb-6">
-          <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <!-- PASO 4: Foto del Estudiante -->
+        <div v-show="currentStep === 4" class="card">
+          <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
             <span class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm">4</span>
             Foto del Estudiante
           </h3>
@@ -426,14 +413,39 @@
           </div>
         </div>
 
-        <!-- Botones de acción -->
-        <div class="flex gap-4 justify-end">
-          <button type="button" @click="goBack" class="btn btn-outline">
-            Cancelar
+        <!-- Botones de navegación -->
+        <div class="flex gap-4 justify-between mt-6">
+          <button
+            v-if="currentStep > 1"
+            type="button"
+            @click="previousStep"
+            class="btn btn-outline"
+          >
+            Anterior
           </button>
-          <button type="submit" :disabled="submitting" class="btn btn-primary">
-            {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }} Estudiante
-          </button>
+          <div v-else></div>
+
+          <div class="flex gap-4">
+            <button type="button" @click="goBack" class="btn btn-outline">
+              Cancelar
+            </button>
+            <button
+              v-if="currentStep < 4"
+              type="button"
+              @click="nextStep"
+              class="btn btn-primary"
+            >
+              Siguiente
+            </button>
+            <button
+              v-else
+              type="submit"
+              :disabled="submitting"
+              class="btn btn-primary"
+            >
+              {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }} Estudiante
+            </button>
+          </div>
         </div>
       </form>
     </main>
@@ -441,9 +453,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import studentService from '@/services/student.service'
+import axios from 'axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -451,6 +464,14 @@ const route = useRoute()
 const isEdit = computed(() => !!route.params.id)
 const error = ref(null)
 const submitting = ref(false)
+const currentStep = ref(1)
+
+const steps = [
+  { number: 1, title: 'Datos Personales' },
+  { number: 2, title: 'Información Médica' },
+  { number: 3, title: 'Apoderados' },
+  { number: 4, title: 'Foto' }
+]
 
 const form = ref({
   nombres: '',
@@ -461,9 +482,6 @@ const form = ref({
   telefono: '',
   email: '',
   direccion: '',
-  distrito: '',
-  provincia: 'Lima',
-  departamento: 'Lima',
   estado: 'activo',
   foto_url: '',
   informacion_medica: {
@@ -473,21 +491,31 @@ const form = ref({
     tiene_alergias: false,
     alergias: '',
     condiciones_medicas: '',
-    medicamentos_regulares: '',
-    seguro_medico: '',
-    numero_seguro: '',
     contacto_emergencia_nombre: '',
     contacto_emergencia_telefono: '',
-    contacto_emergencia_relacion: '',
-    observaciones_medicas: ''
+    contacto_emergencia_relacion: ''
   },
   apoderados: []
 })
 
 const fotoPreview = ref(null)
 const fotoFile = ref(null)
+const loadingReniec = reactive({})
+
+const nextStep = () => {
+  if (currentStep.value < 4) {
+    currentStep.value++
+  }
+}
+
+const previousStep = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
 
 const agregarApoderado = () => {
+  const index = form.value.apoderados.length
   form.value.apoderados.push({
     tipo_apoderado: 'padre',
     dni: '',
@@ -498,10 +526,42 @@ const agregarApoderado = () => {
     direccion: '',
     ocupacion: ''
   })
+  loadingReniec[index] = false
 }
 
 const eliminarApoderado = (index) => {
   form.value.apoderados.splice(index, 1)
+}
+
+const consultarReniec = async (apoderado) => {
+  const index = form.value.apoderados.indexOf(apoderado)
+
+  if (!apoderado.dni || apoderado.dni.length !== 8) {
+    error.value = 'El DNI debe tener 8 dígitos'
+    return
+  }
+
+  loadingReniec[index] = true
+  error.value = null
+
+  try {
+    // Llamar a la API de RENIEC
+    const response = await axios.get(`https://api.apis.net.pe/v2/reniec/dni?numero=${apoderado.dni}`, {
+      headers: {
+        'Authorization': 'Bearer apis-token-10477.7eaofVUeYm1eVFP0nCLnMcqHxMVDKBFN'
+      }
+    })
+
+    if (response.data) {
+      apoderado.nombres = response.data.nombres || ''
+      apoderado.apellidos = `${response.data.apellidoPaterno || ''} ${response.data.apellidoMaterno || ''}`.trim()
+    }
+  } catch (err) {
+    console.error('Error al consultar RENIEC:', err)
+    error.value = 'No se pudo consultar el DNI. Intenta nuevamente o ingresa los datos manualmente.'
+  } finally {
+    loadingReniec[index] = false
+  }
 }
 
 const handleFotoChange = (event) => {
@@ -559,9 +619,6 @@ const loadStudent = async () => {
       telefono: student.telefono || '',
       email: student.email || '',
       direccion: student.direccion || '',
-      distrito: student.distrito || '',
-      provincia: student.provincia || 'Lima',
-      departamento: student.departamento || 'Lima',
       estado: student.estado,
       foto_url: student.foto_url || '',
       informacion_medica: student.informacion_medica || {
@@ -571,13 +628,9 @@ const loadStudent = async () => {
         tiene_alergias: false,
         alergias: '',
         condiciones_medicas: '',
-        medicamentos_regulares: '',
-        seguro_medico: '',
-        numero_seguro: '',
         contacto_emergencia_nombre: '',
         contacto_emergencia_telefono: '',
-        contacto_emergencia_relacion: '',
-        observaciones_medicas: ''
+        contacto_emergencia_relacion: ''
       },
       apoderados: student.apoderados || []
     }

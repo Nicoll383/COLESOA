@@ -35,7 +35,16 @@ const getPool = () => {
   return pool;
 };
 
+// Método para obtener una conexión directamente
+const getConnection = async () => {
+  if (!pool) {
+    throw new Error('MySQL pool no inicializado. Llama a connectMySQL() primero.');
+  }
+  return await pool.getConnection();
+};
+
 module.exports = {
   connectMySQL,
-  getPool
+  getPool,
+  getConnection
 };
