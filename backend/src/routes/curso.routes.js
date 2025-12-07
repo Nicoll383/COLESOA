@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CursoController = require('../controllers/curso.controller');
-const { authenticateToken, authorize } = require('../middleware/auth.middleware');
+const { authenticateToken, authorize } = require('../middlewares/auth.middleware');
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);

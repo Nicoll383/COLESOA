@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const GradoController = require('../controllers/grado.controller');
-const { authenticateToken, authorize } = require('../middleware/auth.middleware');
+const { authenticateToken, authorize } = require('../middlewares/auth.middleware');
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
