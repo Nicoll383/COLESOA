@@ -1,51 +1,98 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <div>
-            <h2 class="font-semibold text-gray-900">Colegio SOA</h2>
-            <p class="text-sm text-gray-600">Sistema de Matrículas</p>
-          </div>
+  <AppLayout>
+    <div class="page-container">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div>
+          <h1 class="page-title">Bienvenido, {{ user?.nombre }}</h1>
+          <p class="page-subtitle">{{ roleLabel }} - Panel de Control</p>
         </div>
-        <div class="flex items-center gap-4">
-          <div class="text-right">
-            <p class="font-medium text-gray-900">{{ user?.nombre }} {{ user?.apellido }}</p>
-            <p class="text-sm text-gray-600">{{ roleLabel }}</p>
-          </div>
-          <button @click="handleLogout" class="btn btn-outline">
-            Cerrar Sesión
-          </button>
+        <div class="current-date">
+          <span class="text-sm text-gray-600">{{ currentDate }}</span>
         </div>
       </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
+      <!-- Estadísticas Rápidas -->
+      <div class="stats-grid">
+        <div class="stat-card bg-gradient-blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Estudiantes Activos</h3>
+            <p class="stat-value">--</p>
+          </div>
+        </div>
+
+        <div class="stat-card bg-gradient-green">
+          <div class="stat-icon">📝</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Matrículas 2025</h3>
+            <p class="stat-value">--</p>
+          </div>
+        </div>
+
+        <div class="stat-card bg-gradient-yellow">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Pagos Pendientes</h3>
+            <p class="stat-value">--</p>
+          </div>
+        </div>
+
+        <div class="stat-card bg-gradient-purple">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Reportes</h3>
+            <p class="stat-value">--</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accesos Rápidos -->
       <div class="card">
-        <h1 class="text-2xl font-bold mb-4">Bienvenido, {{ user?.nombre }}</h1>
-        <p class="text-gray-600 mb-6">Este es tu panel principal.</p>
-
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-blue-800">
-            Accede a tu panel específico desde el menú de navegación.
-          </p>
+        <h2 class="section-title">Accesos Rápidos</h2>
+        <div class="quick-actions-grid">
+          <router-link
+            v-for="action in quickActions"
+            :key="action.path"
+            :to="action.path"
+            class="quick-action-card"
+          >
+            <div class="action-icon">{{ action.icon }}</div>
+            <div class="action-content">
+              <h3 class="action-title">{{ action.title }}</h3>
+              <p class="action-description">{{ action.description }}</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
         </div>
       </div>
-    </main>
-  </div>
+
+      <!-- Información Adicional -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="card">
+          <h2 class="section-title mb-4">Actividad Reciente</h2>
+          <div class="text-center py-8 text-gray-500">
+            <p>No hay actividad reciente</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title mb-4">Notificaciones</h2>
+          <div class="text-center py-8 text-gray-500">
+            <p>No hay notificaciones nuevas</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
-
 const user = computed(() => authStore.user)
 
 const roleLabel = computed(() => {
@@ -59,8 +106,253 @@ const roleLabel = computed(() => {
   return labels[user.value?.rol] || ''
 })
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
-}
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('es-PE', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+})
+
+const quickActions = computed(() => {
+  const actions = []
+
+  // Acciones según el rol
+  if (['administrador', 'secretaria'].includes(user.value?.rol)) {
+    actions.push(
+      {
+        path: '/students',
+        icon: '👥',
+        title: 'Gestionar Estudiantes',
+        description: 'Ver, crear y editar estudiantes'
+      },
+      {
+        path: '/enrollments',
+        icon: '📝',
+        title: 'Matrículas',
+        description: 'Gestionar proceso de matrícula'
+      }
+    )
+  }
+
+  if (['administrador', 'secretaria', 'finanzas'].includes(user.value?.rol)) {
+    actions.push({
+      path: '/payments',
+      icon: '💰',
+      title: 'Pagos',
+      description: 'Control de pagos y pensiones'
+    })
+  }
+
+  actions.push({
+    path: '/reports',
+    icon: '📊',
+    title: 'Reportes',
+    description: 'Ver reportes y estadísticas'
+  })
+
+  return actions
+})
 </script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+}
+
+.current-date {
+  text-transform: capitalize;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.bg-gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.bg-gradient-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.bg-gradient-yellow {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.bg-gradient-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin: 0 0 0.5rem 0;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.quick-action-card:hover {
+  background: white;
+  border-color: #3b82f6;
+  transform: translateX(4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.action-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.action-arrow {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.quick-action-card:hover .action-arrow {
+  opacity: 1;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+</style>

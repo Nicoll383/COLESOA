@@ -74,6 +74,24 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
   },
   {
+    path: '/enrollments',
+    name: 'EnrollmentsList',
+    component: () => import('@/views/enrollments/EnrollmentsList.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria', 'finanzas'] }
+  },
+  {
+    path: '/enrollments/create',
+    name: 'EnrollmentCreate',
+    component: () => import('@/views/enrollments/EnrollmentForm.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/enrollments/:id',
+    name: 'EnrollmentDetail',
+    component: () => import('@/views/enrollments/EnrollmentDetail.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria', 'finanzas'] }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue')
