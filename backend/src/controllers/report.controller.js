@@ -353,8 +353,8 @@ class ReportController {
       const [pagos] = await pool.execute(`
         SELECT
           COUNT(*) as total_transacciones,
-          COALESCE(SUM(CASE WHEN estado = 'completado' THEN monto ELSE 0 END), 0) as ingresos,
-          COALESCE(SUM(CASE WHEN estado = 'pendiente' THEN monto ELSE 0 END), 0) as pendientes
+          COALESCE(SUM(CASE WHEN p.estado = 'completado' THEN p.monto ELSE 0 END), 0) as ingresos,
+          COALESCE(SUM(CASE WHEN p.estado = 'pendiente' THEN p.monto ELSE 0 END), 0) as pendientes
         FROM pagos p
         INNER JOIN matriculas m ON p.matricula_id = m.id
         WHERE m.año_escolar = ?

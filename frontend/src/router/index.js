@@ -110,7 +110,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/config-año-escolar',
+    path: '/school-year-config',
     name: 'ConfigAñoEscolar',
     component: () => import('@/views/settings/ConfigAñoEscolar.vue'),
     meta: { requiresAuth: true, roles: ['administrador'] }

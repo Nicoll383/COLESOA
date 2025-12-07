@@ -40,7 +40,7 @@ app.use('/api/grados', require('./routes/grado.routes'));
 app.use('/api/secciones', require('./routes/seccion.routes'));
 app.use('/api/cursos', require('./routes/curso.routes'));
 app.use('/api/reports', require('./routes/report.routes'));
-app.use('/api/config-año-escolar', require('./routes/año-escolar.routes'));
+app.use('/api/school-year-config', require('./routes/año-escolar.routes'));
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -121,7 +121,7 @@ const adminItems = [
   { path: '/secciones', label: 'Secciones', icon: '🏫' },
   { path: '/cursos', label: 'Cursos', icon: '📚' },
   { path: '/users', label: 'Usuarios', icon: '👤' },
-  { path: '/config-año-escolar', label: 'Año Escolar', icon: '📅' }
+  { path: '/school-year-config', label: 'Año Escolar', icon: '📅' }
 ]
 
 const isActive = (path) => {

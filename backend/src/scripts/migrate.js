@@ -272,7 +272,7 @@ const createTables = async () => {
     console.log('✓ Tabla historial_academico creada');
 
     // Tabla configuraciones del año escolar
-    await connection.execute(`
+    await pool.execute(`
       CREATE TABLE IF NOT EXISTS configuraciones_año_escolar (
         id INT PRIMARY KEY AUTO_INCREMENT,
         año_escolar INT UNIQUE NOT NULL,
