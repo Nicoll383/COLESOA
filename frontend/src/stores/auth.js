@@ -17,11 +17,14 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authService.login(email, password)
 
-      user.value = response.data.user
-      token.value = response.data.token
+      // El backend devuelve: { success: true, data: { token, user } }
+      const { token: authToken, user: authUser } = response.data.data
 
-      localStorage.setItem('token', response.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.user))
+      user.value = authUser
+      token.value = authToken
+
+      localStorage.setItem('token', authToken)
+      localStorage.setItem('user', JSON.stringify(authUser))
 
       return response
     } catch (err) {
