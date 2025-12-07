@@ -1,0 +1,88 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    redirect: '/login'
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/auth/LoginView.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/DashboardView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: () => import('@/views/admin/AdminDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['administrador'] }
+  },
+  {
+    path: '/secretaria',
+    name: 'SecretariaDashboard',
+    component: () => import('@/views/secretaria/SecretariaDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/finanzas',
+    name: 'FinanzasDashboard',
+    component: () => import('@/views/finanzas/FinanzasDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
+  },
+  {
+    path: '/docente',
+    name: 'DocenteDashboard',
+    component: () => import('@/views/docente/DocenteDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/padre',
+    name: 'PadreDashboard',
+    component: () => import('@/views/padre/PadreDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFoundView.vue')
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+  const userRole = authStore.user?.rol
+
+  // Rutas que requieren autenticación
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next('/login')
+  }
+
+  // Rutas solo para invitados (no autenticados)
+  if (to.meta.requiresGuest && isAuthenticated) {
+    return next('/dashboard')
+  }
+
+  // Verificar roles
+  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+    return next('/dashboard')
+  }
+
+  next()
+})
+
+export default router
