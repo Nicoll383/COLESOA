@@ -131,7 +131,6 @@
           </tbody>
         </table>
       </div>
-    </main>
 
     <!-- Modal de confirmación de eliminación -->
     <div v-if="showDeleteModal" class="modal-overlay" @click="showDeleteModal = false">
