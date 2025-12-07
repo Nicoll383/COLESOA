@@ -15,10 +15,14 @@ class Seccion {
     } = seccionData;
 
     try {
+      // Convertir strings vacíos a null para foreign keys
+      const docenteIdValue = docente_id && docente_id !== '' ? docente_id : null;
+      const aulaValue = aula && aula !== '' ? aula : null;
+
       const [result] = await pool.execute(
         `INSERT INTO secciones (grado_id, nombre, capacidad, docente_id, año_escolar, turno, aula)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [grado_id, nombre, capacidad, docente_id, año_escolar, turno, aula]
+        [grado_id, nombre, capacidad, docenteIdValue, año_escolar, turno, aulaValue]
       );
 
       return await this.findById(result.insertId);
@@ -103,16 +107,20 @@ class Seccion {
     const pool = getPool();
     const { nombre, capacidad, docente_id, turno, aula, estado } = seccionData;
 
+    // Convertir strings vacíos a null para foreign keys
+    const docenteIdValue = docente_id && docente_id !== '' ? docente_id : null;
+    const aulaValue = aula && aula !== '' ? aula : null;
+
     const [result] = await pool.execute(
       `UPDATE secciones
        SET nombre = COALESCE(?, nombre),
            capacidad = COALESCE(?, capacidad),
-           docente_id = COALESCE(?, docente_id),
+           docente_id = ?,
            turno = COALESCE(?, turno),
-           aula = COALESCE(?, aula),
+           aula = ?,
            estado = COALESCE(?, estado)
        WHERE id = ?`,
-      [nombre, capacidad, docente_id, turno, aula, estado, id]
+      [nombre, capacidad, docenteIdValue, turno, aulaValue, estado, id]
     );
 
     if (result.affectedRows === 0) {

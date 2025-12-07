@@ -15,10 +15,13 @@ class Curso {
     } = cursoData;
 
     try {
+      // Convertir strings vacíos a null para foreign keys
+      const gradoIdValue = grado_id && grado_id !== '' ? grado_id : null;
+
       const [result] = await pool.execute(
         `INSERT INTO cursos (codigo, nombre, descripcion, nivel, grado_id, horas_semanales, color)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [codigo, nombre, descripcion, nivel, grado_id, horas_semanales, color]
+        [codigo, nombre, descripcion, nivel, gradoIdValue, horas_semanales, color]
       );
 
       return await this.findById(result.insertId);
@@ -85,17 +88,20 @@ class Curso {
     const pool = getPool();
     const { nombre, descripcion, nivel, grado_id, horas_semanales, color, estado } = cursoData;
 
+    // Convertir strings vacíos a null para foreign keys
+    const gradoIdValue = grado_id && grado_id !== '' ? grado_id : null;
+
     const [result] = await pool.execute(
       `UPDATE cursos
        SET nombre = COALESCE(?, nombre),
            descripcion = COALESCE(?, descripcion),
            nivel = COALESCE(?, nivel),
-           grado_id = COALESCE(?, grado_id),
+           grado_id = ?,
            horas_semanales = COALESCE(?, horas_semanales),
            color = COALESCE(?, color),
            estado = COALESCE(?, estado)
        WHERE id = ?`,
-      [nombre, descripcion, nivel, grado_id, horas_semanales, color, estado, id]
+      [nombre, descripcion, nivel, gradoIdValue, horas_semanales, color, estado, id]
     );
 
     if (result.affectedRows === 0) {
@@ -123,17 +129,20 @@ class Curso {
     const { seccion_id, curso_id, docente_id, año_escolar } = data;
 
     try {
+      // Convertir strings vacíos a null para foreign keys
+      const docenteIdValue = docente_id && docente_id !== '' ? docente_id : null;
+
       const [result] = await pool.execute(
         `INSERT INTO seccion_cursos (seccion_id, curso_id, docente_id, año_escolar)
          VALUES (?, ?, ?, ?)`,
-        [seccion_id, curso_id, docente_id, año_escolar]
+        [seccion_id, curso_id, docenteIdValue, año_escolar]
       );
 
       return {
         id: result.insertId,
         seccion_id,
         curso_id,
-        docente_id,
+        docente_id: docenteIdValue,
         año_escolar
       };
     } catch (error) {
@@ -198,9 +207,13 @@ class Curso {
   // Actualizar docente de un curso en una sección
   static async actualizarDocente(asignacion_id, docente_id) {
     const pool = getPool();
+
+    // Convertir strings vacíos a null para foreign keys
+    const docenteIdValue = docente_id && docente_id !== '' ? docente_id : null;
+
     const [result] = await pool.execute(
       'UPDATE seccion_cursos SET docente_id = ? WHERE id = ?',
-      [docente_id, asignacion_id]
+      [docenteIdValue, asignacion_id]
     );
 
     if (result.affectedRows === 0) {
