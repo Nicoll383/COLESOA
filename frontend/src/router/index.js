@@ -104,6 +104,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
   },
   {
+    path: '/reports',
+    name: 'Reports',
+    component: () => import('@/views/reports/ReportsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue')
