@@ -1,15 +1,15 @@
-# 📘 Guía de Git - Sistema Colegio SOA
+# Guía de Git - Sistema Colegio SOA
 
 Esta guía te ayudará a trabajar con Git en el proyecto del Sistema de Matrículas del Colegio SOA.
 
-## 🌿 Branch de Desarrollo
+## Branch de Desarrollo
 
 Estamos trabajando en la branch:
 ```
 claude/school-enrollment-system-017tVphpBH1CkmnHsJ3eqJW1
 ```
 
-## 🔄 Flujo de Trabajo Básico
+## Flujo de Trabajo Básico
 
 ### 1. Verificar el Estado del Repositorio
 
@@ -80,7 +80,7 @@ git push
 git pull origin claude/school-enrollment-system-017tVphpBH1CkmnHsJ3eqJW1
 ```
 
-## 📋 Comandos Paso a Paso - Actualizar Cambios
+## Comandos Paso a Paso - Actualizar Cambios
 
 ### Escenario 1: Hacer tus primeros cambios
 
@@ -134,7 +134,7 @@ git pull origin claude/school-enrollment-system-017tVphpBH1CkmnHsJ3eqJW1
 git pull
 ```
 
-## 🎯 Comandos Útiles Adicionales
+## Comandos Útiles Adicionales
 
 ### Ver Historial de Commits
 
@@ -161,7 +161,7 @@ git checkout -- nombre-archivo.js
 # Quitar archivo del staging (después de add)
 git reset HEAD nombre-archivo.js
 
-# Descartar TODOS los cambios no commiteados (¡CUIDADO!)
+# Descartar TODOS los cambios no commiteados (CUIDADO!)
 git reset --hard HEAD
 ```
 
@@ -178,21 +178,21 @@ git ls-files
 git rm --cached nombre-archivo.js
 ```
 
-## 🔐 Buenas Prácticas
+## Buenas Prácticas
 
 ### Mensajes de Commit
 
-✅ **Buenos mensajes:**
-- `Agregar modelo de Estudiante con validaciones`
-- `Implementar endpoint de registro de matrícula`
-- `Corregir bug en cálculo de pagos`
-- `Actualizar documentación de API`
+BUENOS mensajes:
+- Agregar modelo de Estudiante con validaciones
+- Implementar endpoint de registro de matrícula
+- Corregir bug en cálculo de pagos
+- Actualizar documentación de API
 
-❌ **Malos mensajes:**
-- `cambios`
-- `fix`
-- `update`
-- `asdfasdf`
+MALOS mensajes:
+- cambios
+- fix
+- update
+- asdfasdf
 
 ### Frecuencia de Commits
 
@@ -213,7 +213,7 @@ git log origin/claude/school-enrollment-system-017tVphpBH1CkmnHsJ3eqJW1..HEAD
 git push
 ```
 
-## 🆘 Solución de Problemas
+## Solución de Problemas
 
 ### "No estoy en la branch correcta"
 
@@ -246,11 +246,11 @@ git commit -m "Resolver conflictos de merge"
 # Mantener los cambios en staging
 git reset --soft HEAD~1
 
-# Descartar el commit y los cambios (¡CUIDADO!)
+# Descartar el commit y los cambios (CUIDADO!)
 git reset --hard HEAD~1
 ```
 
-## 📚 Workflow Completo Recomendado
+## Workflow Completo Recomendado
 
 ```bash
 # Cada vez que vayas a trabajar:
@@ -275,7 +275,7 @@ git push
 # 6. Repetir desde paso 2
 ```
 
-## 📞 Ayuda
+## Ayuda
 
 Si tienes problemas con Git:
 - Ejecuta `git status` para ver el estado actual
@@ -283,7 +283,7 @@ Si tienes problemas con Git:
 - Usa `git log` para ver el historial
 - Consulta esta guía
 
-## 🔗 Recursos Adicionales
+## Recursos Adicionales
 
 - [Git Cheat Sheet](https://education.github.com/git-cheat-sheet-education.pdf)
 - [Pro Git Book](https://git-scm.com/book/es/v2)

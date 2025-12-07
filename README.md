@@ -1,12 +1,12 @@
-# 🏫 Sistema de Matrículas - Colegio SOA
+# Sistema de Matrículas - Colegio SOA
 
 Sistema integral de gestión de matrículas escolares para nivel primaria del Colegio SOA.
 
-## 📋 Descripción
+## Descripción
 
 Sistema web completo para la gestión de procesos de matrícula escolar, diseñado específicamente para nivel primaria. Incluye gestión de estudiantes, pagos, horarios, docentes y padres/apoderados.
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 - **Backend**: Node.js + Express
 - **Frontend**: Vue.js 3 + Vue Router + Pinia
@@ -16,7 +16,7 @@ Sistema web completo para la gestión de procesos de matrícula escolar, diseña
 - **Autenticación**: JWT (JSON Web Tokens)
 - **Diseño**: Inspirado en Colegio Innova
 
-## 👥 Roles del Sistema
+## Roles del Sistema
 
 El sistema contempla 5 roles principales:
 
@@ -49,7 +49,7 @@ El sistema contempla 5 roles principales:
 - Consulta de pagos
 - Descarga de documentos
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 COLESOA/
@@ -86,23 +86,23 @@ COLESOA/
 └── README.md              # Este archivo
 ```
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 Ver [Guía de Inicio](./docs/GUIA_INICIO.md) para instrucciones detalladas de instalación y configuración.
 
 Ver [Guía de Git](./docs/GUIA_GIT.md) para flujo de trabajo con Git.
 
-## 📝 Próximos Pasos
+## Próximos Pasos
 
-1. ✅ Definición de roles
-2. ⏳ Configuración inicial del proyecto
-3. ⏳ Modelos de base de datos
-4. ⏳ Sistema de autenticación
-5. ⏳ Módulo de matrículas
-6. ⏳ Módulo de pagos
-7. ⏳ Panel de administración
-8. ⏳ Interfaz de padres/apoderados
+1. Definición de roles (COMPLETADO)
+2. Configuración inicial del proyecto (EN PROCESO)
+3. Modelos de base de datos
+4. Sistema de autenticación
+5. Módulo de matrículas
+6. Módulo de pagos
+7. Panel de administración
+8. Interfaz de padres/apoderados
 
-## 📄 Licencia
+## Licencia
 
 Proyecto privado - Colegio SOA © 2025
