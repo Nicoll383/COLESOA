@@ -1,23 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middlewares/auth.middleware');
-const { finanzasOrAdmin } = require('../middlewares/role.middleware');
+const PaymentController = require('../controllers/payment.controller');
+const { authenticateToken, authorize } = require('../middlewares/auth.middleware');
 
-// Placeholder controller
-const paymentController = {
-  list: (req, res) => res.json({ message: 'Listar pagos' }),
-  getById: (req, res) => res.json({ message: `Pago ${req.params.id}` }),
-  create: (req, res) => res.json({ message: 'Registrar pago' }),
-  update: (req, res) => res.json({ message: `Actualizar pago ${req.params.id}` }),
-  delete: (req, res) => res.json({ message: `Eliminar pago ${req.params.id}` })
-};
+// Todas las rutas requieren autenticación
+router.use(authenticateToken);
 
-router.use(verifyToken);
+// Listar pagos (admin, secretaria, finanzas pueden ver todos; padre solo los suyos)
+router.get(
+  '/',
+  authorize(['administrador', 'secretaria', 'finanzas', 'padre']),
+  PaymentController.list
+);
 
-router.get('/', paymentController.list);
-router.get('/:id', paymentController.getById);
-router.post('/', finanzasOrAdmin, paymentController.create);
-router.put('/:id', finanzasOrAdmin, paymentController.update);
-router.delete('/:id', finanzasOrAdmin, paymentController.delete);
+// Obtener pago por ID
+router.get(
+  '/:id',
+  authorize(['administrador', 'secretaria', 'finanzas', 'padre']),
+  PaymentController.getById
+);
+
+// Crear nuevo pago (admin, secretaria, finanzas)
+router.post(
+  '/',
+  authorize(['administrador', 'secretaria', 'finanzas']),
+  PaymentController.create
+);
+
+// Actualizar estado del pago (admin, finanzas)
+router.patch(
+  '/:id/estado',
+  authorize(['administrador', 'finanzas']),
+  PaymentController.updateEstado
+);
+
+// Obtener pagos pendientes de una matrícula
+router.get(
+  '/matricula/:matriculaId/pendientes',
+  authorize(['administrador', 'secretaria', 'finanzas', 'padre']),
+  PaymentController.getPagosPendientes
+);
+
+// Obtener total pagado de una matrícula
+router.get(
+  '/matricula/:matriculaId/total',
+  authorize(['administrador', 'secretaria', 'finanzas', 'padre']),
+  PaymentController.getTotalPagado
+);
 
 module.exports = router;

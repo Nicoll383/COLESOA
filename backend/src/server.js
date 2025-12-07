@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const fileUpload = require('express-fileupload');
+const path = require('path');
 
 const { connectMySQL } = require('./config/mysql');
 const { connectMongoDB } = require('./config/mongodb');
@@ -20,6 +22,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
+// File upload middleware
+app.use(fileUpload({
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+  abortOnLimit: true,
+  createParentPath: true
+}));
+
+// Servir archivos estáticos (documentos subidos)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -35,6 +47,7 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/students', require('./routes/student.routes'));
 app.use('/api/enrollments', require('./routes/enrollment.routes'));
 app.use('/api/payments', require('./routes/payment.routes'));
+app.use('/api/documentos', require('./routes/documento.routes'));
 app.use('/api/reniec', require('./routes/reniec.routes'));
 app.use('/api/grados', require('./routes/grado.routes'));
 app.use('/api/secciones', require('./routes/seccion.routes'));
