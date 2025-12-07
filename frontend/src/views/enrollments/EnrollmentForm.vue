@@ -467,9 +467,10 @@ const createEnrollment = async () => {
   }
 }
 
-const nextStep = () => {
-  if (currentStep.value === 2 && !secciones.value.length) {
-    loadSecciones()
+const nextStep = async () => {
+  // Cargar secciones antes de avanzar al paso 2
+  if (currentStep.value === 1) {
+    await loadSecciones()
   }
   currentStep.value++
 }

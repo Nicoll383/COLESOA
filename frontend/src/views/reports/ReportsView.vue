@@ -125,6 +125,49 @@
             </div>
           </div>
 
+          <!-- Estudiantes por Curso -->
+          <div v-if="activeTab === 'cursos'" class="tab-panel">
+            <h3 class="section-title">Estudiantes Matriculados por Curso</h3>
+            <div v-if="loadingCursos" class="loading">Cargando...</div>
+            <div v-else-if="cursosData.length > 0">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Curso</th>
+                      <th>Nivel</th>
+                      <th>Grado</th>
+                      <th>Sección</th>
+                      <th>Total Estudiantes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="curso in cursosData" :key="`${curso.curso_id}-${curso.seccion_nombre}`">
+                      <td><span class="badge badge-info">{{ curso.curso_codigo }}</span></td>
+                      <td><strong>{{ curso.curso_nombre }}</strong></td>
+                      <td>
+                        <span class="badge badge-secondary">
+                          {{ curso.nivel.charAt(0).toUpperCase() + curso.nivel.slice(1) }}
+                        </span>
+                      </td>
+                      <td>{{ curso.grado_nombre }}</td>
+                      <td>{{ curso.seccion_nombre }}</td>
+                      <td>
+                        <span class="badge badge-primary">
+                          {{ curso.total_estudiantes }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div v-else class="empty-state-small">
+              <p>No hay cursos con estudiantes matriculados</p>
+            </div>
+          </div>
+
           <!-- Vacantes Disponibles -->
           <div v-if="activeTab === 'vacantes'" class="tab-panel">
             <h3 class="section-title">Resumen de Vacantes</h3>
@@ -306,6 +349,7 @@ const añoEscolar = ref(currentYear)
 const activeTab = ref('estudiantes')
 const tabs = [
   { id: 'estudiantes', label: 'Estudiantes Matriculados', icon: '👥' },
+  { id: 'cursos', label: 'Estudiantes por Curso', icon: '📚' },
   { id: 'vacantes', label: 'Vacantes', icon: '🏫' },
   { id: 'pagos', label: 'Pagos Pendientes', icon: '💰' },
   { id: 'comparativas', label: 'Comparativas', icon: '📊' }
@@ -313,6 +357,7 @@ const tabs = [
 
 const dashboardData = ref(null)
 const estudiantesData = ref([])
+const cursosData = ref([])
 const vacantesData = ref([])
 const vacantesTotales = ref({})
 const pagosPendientesData = ref([])
@@ -320,6 +365,7 @@ const pagosTotales = ref({})
 const comparativasData = ref([])
 
 const loadingEstudiantes = ref(false)
+const loadingCursos = ref(false)
 const loadingVacantes = ref(false)
 const loadingPagos = ref(false)
 const loadingComparativas = ref(false)
@@ -371,6 +417,18 @@ const loadEstudiantes = async () => {
   }
 }
 
+const loadCursos = async () => {
+  loadingCursos.value = true
+  try {
+    const response = await reportService.getEstudiantesPorCurso(añoEscolar.value)
+    cursosData.value = response.data.data || []
+  } catch (error) {
+    console.error('Error:', error)
+  } finally {
+    loadingCursos.value = false
+  }
+}
+
 const loadVacantes = async () => {
   loadingVacantes.value = true
   try {
@@ -412,6 +470,7 @@ const loadComparativas = async () => {
 const loadData = () => {
   loadDashboard()
   loadEstudiantes()
+  loadCursos()
   loadVacantes()
   loadPagosPendientes()
   loadComparativas()

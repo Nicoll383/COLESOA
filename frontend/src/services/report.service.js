@@ -15,6 +15,13 @@ export default {
     })
   },
 
+  // Estudiantes por curso
+  getEstudiantesPorCurso(año_escolar) {
+    return api.get('/reports/estudiantes-por-curso', {
+      params: { año_escolar }
+    })
+  },
+
   // Vacantes disponibles
   getVacantesDisponibles(año_escolar) {
     return api.get('/reports/vacantes-disponibles', {

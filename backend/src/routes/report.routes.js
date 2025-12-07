@@ -11,6 +11,7 @@ router.get('/dashboard', ReportController.dashboard);
 
 // Reportes específicos
 router.get('/estudiantes-matriculados', ReportController.estudiantesMatriculados);
+router.get('/estudiantes-por-curso', ReportController.estudiantesPorCurso);
 router.get('/vacantes-disponibles', ReportController.vacantesDisponibles);
 router.get('/pagos', ReportController.pagos);
 router.get('/pagos-pendientes', ReportController.pagosPendientes);

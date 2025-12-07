@@ -271,6 +271,28 @@ const createTables = async () => {
     `);
     console.log('✓ Tabla historial_academico creada');
 
+    // Tabla configuraciones del año escolar
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS configuraciones_año_escolar (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        año_escolar INT UNIQUE NOT NULL,
+        fecha_inicio_matricula DATE,
+        fecha_fin_matricula DATE,
+        costo_matricula DECIMAL(10, 2) DEFAULT 500.00,
+        costo_mensualidad DECIMAL(10, 2) DEFAULT 350.00,
+        descuento_hermanos_porcentaje INT DEFAULT 10,
+        descuento_pronto_pago_porcentaje INT DEFAULT 5,
+        niveles_activos JSON,
+        estado ENUM('activo', 'inactivo', 'cerrado') DEFAULT 'activo',
+        observaciones TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_año (año_escolar),
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla configuraciones_año_escolar creada');
+
     console.log('\n✅ Todas las tablas fueron creadas exitosamente\n');
   } catch (error) {
     console.error('❌ Error al crear tablas:', error.message);

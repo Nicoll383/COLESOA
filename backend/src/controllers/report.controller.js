@@ -392,6 +392,55 @@ class ReportController {
       });
     }
   }
+
+  // Reporte de estudiantes matriculados por curso
+  static async estudiantesPorCurso(req, res) {
+    const pool = getPool();
+    const { año_escolar } = req.query;
+
+    if (!año_escolar) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe proporcionar el año escolar'
+      });
+    }
+
+    try {
+      const [rows] = await pool.execute(`
+        SELECT
+          c.id as curso_id,
+          c.codigo as curso_codigo,
+          c.nombre as curso_nombre,
+          c.nivel,
+          g.nombre as grado_nombre,
+          s.nombre as seccion_nombre,
+          COUNT(DISTINCT e.id) as total_estudiantes,
+          GROUP_CONCAT(DISTINCT CONCAT(e.nombres, ' ', e.apellidos) SEPARATOR ', ') as estudiantes
+        FROM cursos c
+        LEFT JOIN seccion_cursos sc ON c.id = sc.curso_id AND sc.año_escolar = ?
+        LEFT JOIN secciones s ON sc.seccion_id = s.id
+        LEFT JOIN grados g ON s.grado_id = g.id
+        LEFT JOIN matriculas m ON s.id = m.seccion_id AND m.año_escolar = ? AND m.estado != 'anulada'
+        LEFT JOIN estudiantes e ON m.estudiante_id = e.id
+        WHERE c.estado = 'activo'
+        GROUP BY c.id, s.id
+        HAVING total_estudiantes > 0
+        ORDER BY c.nivel, c.nombre, g.grado, s.nombre
+      `, [año_escolar, año_escolar]);
+
+      res.json({
+        success: true,
+        data: rows,
+        año_escolar: parseInt(año_escolar)
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al generar reporte de estudiantes por curso'
+      });
+    }
+  }
 }
 
 module.exports = ReportController;
