@@ -4,7 +4,7 @@ const User = require('../models/User');
 /**
  * Middleware para verificar JWT token
  */
-const verifyToken = async (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -63,6 +63,31 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware para verificar roles
+ */
+const authorize = (roles = []) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: true,
+        message: 'No autenticado'
+      });
+    }
+
+    if (roles.length && !roles.includes(req.user.rol)) {
+      return res.status(403).json({
+        error: true,
+        message: 'No tiene permisos para realizar esta acción'
+      });
+    }
+
+    next();
+  };
+};
+
 module.exports = {
-  verifyToken
+  authenticateToken,
+  authorize,
+  verifyToken: authenticateToken // Alias por compatibilidad
 };
