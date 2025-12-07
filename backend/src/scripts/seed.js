@@ -112,6 +112,21 @@ const seedData = async () => {
     `);
     console.log('✓ Cursos insertados');
 
+    // 8. Documentos requeridos
+    console.log('Insertando documentos requeridos...');
+    await pool.execute(`
+      INSERT INTO documentos_requeridos (nombre, descripcion, obligatorio, tipo_archivo, orden, estado) VALUES
+      ('DNI del Estudiante', 'Copia del DNI del estudiante (ambas caras)', true, 'PDF,JPG,PNG', 1, 'activo'),
+      ('DNI del Apoderado', 'Copia del DNI del padre o apoderado (ambas caras)', true, 'PDF,JPG,PNG', 2, 'activo'),
+      ('Partida de Nacimiento', 'Partida de nacimiento original o copia legalizada', true, 'PDF', 3, 'activo'),
+      ('Certificado de Estudios', 'Certificado de estudios del año anterior', true, 'PDF', 4, 'activo'),
+      ('Constancia de No Adeudo', 'Constancia de no adeudo del colegio anterior', true, 'PDF', 5, 'activo'),
+      ('Foto Tamaño Carnet', 'Fotografía reciente tamaño carnet', true, 'JPG,PNG', 6, 'activo'),
+      ('Ficha de Matrícula', 'Ficha de matrícula firmada por el apoderado', true, 'PDF', 7, 'activo')
+      ON DUPLICATE KEY UPDATE id=id
+    `);
+    console.log('✓ Documentos requeridos insertados');
+
     console.log('\n✅ Datos de prueba insertados exitosamente\n');
     console.log('📝 Usuarios de prueba creados:');
     console.log('   Admin:      admin@colegiosoa.edu.pe / Password123!');

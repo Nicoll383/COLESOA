@@ -293,6 +293,65 @@ const createTables = async () => {
     `);
     console.log('✓ Tabla configuraciones_año_escolar creada');
 
+    // Tabla de documentos requeridos
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS documentos_requeridos (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        nombre VARCHAR(100) NOT NULL,
+        descripcion TEXT,
+        obligatorio BOOLEAN DEFAULT true,
+        tipo_archivo VARCHAR(100) DEFAULT 'PDF,JPG,PNG',
+        orden INT DEFAULT 0,
+        estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla documentos_requeridos creada');
+
+    // Tabla de documentos del estudiante
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS documentos_estudiante (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        estudiante_id INT NOT NULL,
+        documento_requerido_id INT NOT NULL,
+        matricula_id INT,
+        archivo_url VARCHAR(500),
+        nombre_archivo VARCHAR(255),
+        estado ENUM('pendiente', 'enviado', 'en_revision', 'aceptado', 'rechazado') DEFAULT 'pendiente',
+        observaciones TEXT,
+        fecha_subida TIMESTAMP NULL,
+        revisado_por INT,
+        fecha_revision TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
+        FOREIGN KEY (documento_requerido_id) REFERENCES documentos_requeridos(id) ON DELETE CASCADE,
+        FOREIGN KEY (matricula_id) REFERENCES matriculas(id) ON DELETE SET NULL,
+        FOREIGN KEY (revisado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+        INDEX idx_estudiante (estudiante_id),
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla documentos_estudiante creada');
+
+    // Tabla de seguimiento de documentos
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS seguimiento_documentos (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        documento_estudiante_id INT NOT NULL,
+        estado_anterior VARCHAR(50),
+        estado_nuevo VARCHAR(50) NOT NULL,
+        usuario_id INT,
+        comentario TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (documento_estudiante_id) REFERENCES documentos_estudiante(id) ON DELETE CASCADE,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+        INDEX idx_documento (documento_estudiante_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla seguimiento_documentos creada');
+
     console.log('\n✅ Todas las tablas fueron creadas exitosamente\n');
   } catch (error) {
     console.error('❌ Error al crear tablas:', error.message);
