@@ -1,5 +1,17 @@
 const axios = require('axios');
 
+// Base de datos simulada de DNIs para desarrollo
+// NOTA: Para producción, se recomienda contratar un servicio de API de RENIEC de pago
+const dniDatabase = {
+  '74892504': { nombres: 'JUAN CARLOS', apellidoPaterno: 'RODRIGUEZ', apellidoMaterno: 'GARCIA' },
+  '12345678': { nombres: 'MARIA ELENA', apellidoPaterno: 'LOPEZ', apellidoMaterno: 'TORRES' },
+  '87654321': { nombres: 'JOSE LUIS', apellidoPaterno: 'MARTINEZ', apellidoMaterno: 'SANCHEZ' },
+  '11111111': { nombres: 'ANA SOFIA', apellidoPaterno: 'FERNANDEZ', apellidoMaterno: 'RAMIREZ' },
+  '22222222': { nombres: 'CARLOS ALBERTO', apellidoPaterno: 'GOMEZ', apellidoMaterno: 'DIAZ' },
+  '33333333': { nombres: 'LUCIA ISABEL', apellidoPaterno: 'VASQUEZ', apellidoMaterno: 'CRUZ' },
+  '44444444': { nombres: 'PEDRO ANTONIO', apellidoPaterno: 'QUISPE', apellidoMaterno: 'MAMANI' }
+};
+
 class ReniecController {
   // Consultar DNI en RENIEC
   static async consultarDni(req, res) {
@@ -14,69 +26,67 @@ class ReniecController {
         });
       }
 
-      // Intentar con diferentes APIs de RENIEC
       let data = null;
-      let error = null;
 
-      // Opción 1: API apis.net.pe
-      try {
-        const response1 = await axios.get(
-          `https://api.apis.net.pe/v2/reniec/dni?numero=${dni}`,
-          {
-            headers: {
-              'Authorization': 'Bearer apis-token-10477.7eaofVUeYm1eVFP0nCLnMcqHxMVDKBFN'
-            },
-            timeout: 5000
-          }
-        );
+      // MODO DESARROLLO: Usar base de datos simulada primero
+      if (dniDatabase[dni]) {
+        console.log(`✓ DNI ${dni} encontrado en base de datos de desarrollo`);
+        const persona = dniDatabase[dni];
+        data = {
+          dni: dni,
+          nombres: persona.nombres,
+          apellidoPaterno: persona.apellidoPaterno,
+          apellidoMaterno: persona.apellidoMaterno,
+          nombreCompleto: `${persona.nombres} ${persona.apellidoPaterno} ${persona.apellidoMaterno}`.trim()
+        };
 
-        if (response1.data) {
-          data = {
-            dni: dni,
-            nombres: response1.data.nombres || '',
-            apellidoPaterno: response1.data.apellidoPaterno || '',
-            apellidoMaterno: response1.data.apellidoMaterno || '',
-            nombreCompleto: `${response1.data.nombres || ''} ${response1.data.apellidoPaterno || ''} ${response1.data.apellidoMaterno || ''}`.trim()
-          };
-        }
-      } catch (err1) {
-        error = err1.message;
-        console.log('API 1 falló, intentando con API 2...');
-
-        // Opción 2: API dniruc.apisperu.com
-        try {
-          const response2 = await axios.get(
-            `https://dniruc.apisperu.com/api/v1/dni/${dni}?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImZuaWNvbGwzODNAZ21haWwuY29tIn0.VzN3T8l8H_KL_0qYcF_3LqQH_8xYx9xYx9xYx9xYx9x`,
-            { timeout: 5000 }
-          );
-
-          if (response2.data && response2.data.nombres) {
-            data = {
-              dni: dni,
-              nombres: response2.data.nombres || '',
-              apellidoPaterno: response2.data.apellidoPaterno || '',
-              apellidoMaterno: response2.data.apellidoMaterno || '',
-              nombreCompleto: `${response2.data.nombres || ''} ${response2.data.apellidoPaterno || ''} ${response2.data.apellidoMaterno || ''}`.trim()
-            };
-          }
-        } catch (err2) {
-          error = err2.message;
-          console.log('API 2 también falló');
-        }
-      }
-
-      // Si no se pudo obtener datos de ninguna API
-      if (!data) {
-        return res.status(404).json({
-          success: false,
-          message: 'No se pudo consultar el DNI en este momento. Por favor, ingrese los datos manualmente.',
-          error: error
+        return res.json({
+          success: true,
+          data: data,
+          source: 'development'
         });
       }
 
-      res.json({
-        success: true,
-        data: data
+      // Si no está en la BD de desarrollo, intentar APIs reales (opcional)
+      // NOTA: Las APIs públicas de RENIEC suelen fallar o requerir pago
+      console.log(`⚠ DNI ${dni} no encontrado en BD de desarrollo, intentando APIs...`);
+
+      // Opción: Intentar con API de prueba (puede fallar)
+      try {
+        const response = await axios.get(
+          `https://dniruc.apisperu.com/api/v1/dni/${dni}`,
+          {
+            timeout: 3000,
+            headers: {
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (response.data && response.data.nombres) {
+          data = {
+            dni: dni,
+            nombres: response.data.nombres || '',
+            apellidoPaterno: response.data.apellidoPaterno || '',
+            apellidoMaterno: response.data.apellidoMaterno || '',
+            nombreCompleto: `${response.data.nombres || ''} ${response.data.apellidoPaterno || ''} ${response.data.apellidoMaterno || ''}`.trim()
+          };
+
+          return res.json({
+            success: true,
+            data: data,
+            source: 'api'
+          });
+        }
+      } catch (apiError) {
+        console.log('✗ APIs de RENIEC no disponibles (requieren autenticación de pago)');
+      }
+
+      // Si no se encontró en ningún lado
+      return res.status(404).json({
+        success: false,
+        message: 'DNI no encontrado. Por favor, ingrese los datos manualmente.',
+        hint: 'Para desarrollo, use uno de estos DNIs de prueba: 74892504, 12345678, 87654321, 11111111, 22222222, 33333333, 44444444'
       });
 
     } catch (error) {
