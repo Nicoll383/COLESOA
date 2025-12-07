@@ -118,6 +118,8 @@ const menuItems = computed(() => {
 })
 
 const adminItems = [
+  { path: '/secciones', label: 'Secciones', icon: '🏫' },
+  { path: '/cursos', label: 'Cursos', icon: '📚' },
   { path: '/users', label: 'Usuarios', icon: '👤' },
   { path: '/settings', label: 'Configuración', icon: '⚙️' }
 ]

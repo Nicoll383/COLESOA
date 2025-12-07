@@ -92,6 +92,18 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretaria', 'finanzas'] }
   },
   {
+    path: '/secciones',
+    name: 'SeccionesManagement',
+    component: () => import('@/views/academic/SeccionesManagement.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/cursos',
+    name: 'CursosManagement',
+    component: () => import('@/views/academic/CursosManagement.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue')
