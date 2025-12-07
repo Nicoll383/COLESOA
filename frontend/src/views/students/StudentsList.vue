@@ -1,22 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">Gestión de Estudiantes</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="goBack" class="btn btn-outline">Volver</button>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
-        </div>
-      </div>
-    </nav>
-
-    <main class="container mx-auto px-4 py-8">
+  <AppLayout>
+    <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold">Estudiantes</h1>
         <button @click="goToCreate" class="btn btn-primary">
@@ -169,7 +153,8 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
@@ -177,6 +162,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import studentService from '@/services/student.service'
+import AppLayout from '@/components/AppLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -209,15 +195,6 @@ const loadStudents = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const goBack = () => {
-  router.back()
-}
-
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
 }
 
 const goToCreate = () => {
@@ -255,19 +232,37 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 .badge-success {
   background-color: #10b981;
   color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-danger {
   background-color: #ef4444;
   color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-warning {
   background-color: #f59e0b;
   color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .modal-overlay {
@@ -280,23 +275,46 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 9999;
 }
 
 .modal-content {
   background: white;
   padding: 2rem;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   max-width: 500px;
   width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 table {
   border-collapse: collapse;
+  width: 100%;
 }
 
 th {
   background-color: #f9fafb;
   font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover {
+  background-color: #f9fafb;
 }
 </style>

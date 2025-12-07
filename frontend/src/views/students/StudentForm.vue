@@ -1,22 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">
-            {{ isEdit ? 'Editar' : 'Nuevo' }} Estudiante
-          </h2>
+  <AppLayout>
+    <div class="page-container">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">{{ isEdit ? 'Editar' : 'Nuevo' }} Estudiante</h1>
+          <p class="page-subtitle">Complete todos los pasos del formulario</p>
         </div>
-        <div class="flex items-center gap-4">
-          <button @click="goBack" class="btn btn-outline">Volver</button>
-        </div>
+        <button @click="goBack" class="btn-secondary">
+          <span>← Volver</span>
+        </button>
       </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8 max-w-4xl">
+      <div class="content-wrapper">
       <div v-if="error" class="alert alert-danger mb-6">
         {{ error }}
       </div>
@@ -448,15 +443,17 @@
           </div>
         </div>
       </form>
-    </main>
-  </div>
+      </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import studentService from '@/services/student.service'
-import axios from 'axios'
+import reniecService from '@/services/reniec.service'
+import AppLayout from '@/components/AppLayout.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -538,6 +535,7 @@ const consultarReniec = async (apoderado) => {
 
   if (!apoderado.dni || apoderado.dni.length !== 8) {
     error.value = 'El DNI debe tener 8 dígitos'
+    setTimeout(() => error.value = null, 3000)
     return
   }
 
@@ -545,20 +543,25 @@ const consultarReniec = async (apoderado) => {
   error.value = null
 
   try {
-    // Llamar a la API de RENIEC
-    const response = await axios.get(`https://api.apis.net.pe/v2/reniec/dni?numero=${apoderado.dni}`, {
-      headers: {
-        'Authorization': 'Bearer apis-token-10477.7eaofVUeYm1eVFP0nCLnMcqHxMVDKBFN'
-      }
-    })
+    const response = await reniecService.consultarDni(apoderado.dni)
 
-    if (response.data) {
-      apoderado.nombres = response.data.nombres || ''
-      apoderado.apellidos = `${response.data.apellidoPaterno || ''} ${response.data.apellidoMaterno || ''}`.trim()
+    if (response.data.success && response.data.data) {
+      const data = response.data.data
+      apoderado.nombres = data.nombres || ''
+      apoderado.apellidos = `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim()
+
+      // Mostrar mensaje de éxito
+      const successMsg = document.createElement('div')
+      successMsg.className = 'alert-success'
+      successMsg.textContent = 'Datos cargados desde RENIEC'
+      successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 1rem; border-radius: 0.5rem; z-index: 9999;'
+      document.body.appendChild(successMsg)
+      setTimeout(() => successMsg.remove(), 3000)
     }
   } catch (err) {
     console.error('Error al consultar RENIEC:', err)
-    error.value = 'No se pudo consultar el DNI. Intenta nuevamente o ingresa los datos manualmente.'
+    error.value = 'No se pudo consultar el DNI. Por favor, ingresa los datos manualmente.'
+    setTimeout(() => error.value = null, 5000)
   } finally {
     loadingReniec[index] = false
   }
@@ -648,15 +651,70 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+}
+
+.btn-secondary {
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.content-wrapper {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.card {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
 .required::after {
   content: ' *';
-  color: red;
+  color: #ef4444;
 }
 
 .alert {
   padding: 1rem;
-  border-radius: 0.375rem;
-  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .alert-danger {
@@ -669,10 +727,111 @@ onMounted(() => {
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
+  accent-color: #3b82f6;
 }
 
 .btn-sm {
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+/* Progress steps styling */
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.w-12 {
+  width: 3rem;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.bg-blue-600 {
+  background-color: #2563eb;
+}
+
+.text-white {
+  color: white;
+}
+
+.bg-gray-300 {
+  background-color: #d1d5db;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.h-1 {
+  height: 0.25rem;
+}
+
+.mx-2 {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
 }
 </style>
