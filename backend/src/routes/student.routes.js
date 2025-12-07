@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const StudentController = require('../controllers/student.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
-const { secretariaOrAdmin } = require('../middlewares/role.middleware');
+const { secretariaOrAdmin, adminOnly } = require('../middlewares/role.middleware');
 
-// Placeholder controller
-const studentController = {
-  list: (req, res) => res.json({ message: 'Listar estudiantes' }),
-  getById: (req, res) => res.json({ message: `Estudiante ${req.params.id}` }),
-  create: (req, res) => res.json({ message: 'Crear estudiante' }),
-  update: (req, res) => res.json({ message: `Actualizar estudiante ${req.params.id}` }),
-  delete: (req, res) => res.json({ message: `Eliminar estudiante ${req.params.id}` })
-};
-
+// Todas las rutas requieren autenticación
 router.use(verifyToken);
 
-router.get('/', studentController.list);
-router.get('/:id', studentController.getById);
-router.post('/', secretariaOrAdmin, studentController.create);
-router.put('/:id', secretariaOrAdmin, studentController.update);
-router.delete('/:id', secretariaOrAdmin, studentController.delete);
+// Obtener todos los estudiantes (con filtros opcionales)
+router.get('/', StudentController.getAll);
+
+// Obtener estudiante por ID
+router.get('/:id', StudentController.getById);
+
+// Crear nuevo estudiante
+router.post('/', secretariaOrAdmin, StudentController.create);
+
+// Actualizar estudiante
+router.put('/:id', secretariaOrAdmin, StudentController.update);
+
+// Eliminar estudiante (solo admin)
+router.delete('/:id', adminOnly, StudentController.delete);
+
+// Validar si puede matricularse en un grado
+router.post('/validar-matricula', secretariaOrAdmin, StudentController.validarMatricula);
+
+// Verificar documentos obligatorios completos
+router.get('/:id/verificar-documentos', secretariaOrAdmin, StudentController.verificarDocumentos);
+
+// Subir documento
+router.post('/documentos', StudentController.uploadMiddleware(), StudentController.subirDocumento);
+
+// Agregar historial académico
+router.post('/historial', secretariaOrAdmin, StudentController.agregarHistorial);
 
 module.exports = router;

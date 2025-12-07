@@ -50,6 +50,30 @@ const routes = [
     meta: { requiresAuth: true, roles: ['padre'] }
   },
   {
+    path: '/students',
+    name: 'StudentsList',
+    component: () => import('@/views/students/StudentsList.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria', 'docente', 'finanzas'] }
+  },
+  {
+    path: '/students/create',
+    name: 'StudentCreate',
+    component: () => import('@/views/students/StudentForm.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/students/:id',
+    name: 'StudentDetail',
+    component: () => import('@/views/students/StudentDetail.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria', 'docente', 'finanzas', 'padre'] }
+  },
+  {
+    path: '/students/:id/edit',
+    name: 'StudentEdit',
+    component: () => import('@/views/students/StudentForm.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue')

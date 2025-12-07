@@ -44,7 +44,7 @@
             <h3 class="font-medium mb-1">Gestión de Usuarios</h3>
             <p class="text-sm text-gray-600">Administrar usuarios del sistema</p>
           </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+          <div @click="goToStudents" class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
             <h3 class="font-medium mb-1">Estudiantes</h3>
             <p class="text-sm text-gray-600">Ver y gestionar estudiantes</p>
           </div>
@@ -83,6 +83,10 @@ const user = computed(() => authStore.user)
 const handleLogout = () => {
   authStore.logout()
   router.push('/login')
+}
+
+const goToStudents = () => {
+  router.push('/students')
 }
 </script>
 
