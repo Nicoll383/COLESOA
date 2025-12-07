@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const EnrollmentController = require('../controllers/enrollment.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
-const { secretariaOrAdmin } = require('../middlewares/role.middleware');
+const { secretariaOrAdmin, adminOnly } = require('../middlewares/role.middleware');
 
-// Placeholder controller
-const enrollmentController = {
-  list: (req, res) => res.json({ message: 'Listar matrículas' }),
-  getById: (req, res) => res.json({ message: `Matrícula ${req.params.id}` }),
-  create: (req, res) => res.json({ message: 'Crear matrícula' }),
-  update: (req, res) => res.json({ message: `Actualizar matrícula ${req.params.id}` }),
-  delete: (req, res) => res.json({ message: `Eliminar matrícula ${req.params.id}` })
-};
-
+// Todas las rutas requieren autenticación
 router.use(verifyToken);
 
-router.get('/', enrollmentController.list);
-router.get('/:id', enrollmentController.getById);
-router.post('/', secretariaOrAdmin, enrollmentController.create);
-router.put('/:id', secretariaOrAdmin, enrollmentController.update);
-router.delete('/:id', secretariaOrAdmin, enrollmentController.delete);
+// Consultar secciones con vacantes
+router.get('/secciones-vacantes', EnrollmentController.getSeccionesConVacantes);
+
+// Consultar vacantes de una sección específica
+router.get('/vacantes', EnrollmentController.getVacantes);
+
+// Obtener todas las matrículas
+router.get('/', EnrollmentController.getAll);
+
+// Obtener matrícula por ID
+router.get('/:id', EnrollmentController.getById);
+
+// Crear nueva matrícula (preinscripción)
+router.post('/', secretariaOrAdmin, EnrollmentController.create);
+
+// Actualizar estado de matrícula
+router.patch('/:id/estado', secretariaOrAdmin, EnrollmentController.updateEstado);
+
+// Anular matrícula
+router.post('/:id/anular', adminOnly, EnrollmentController.anular);
+
+// Generar contrato en PDF
+router.get('/:id/contrato', EnrollmentController.generarContrato);
+
+// Generar comprobante en PDF
+router.get('/:id/comprobante', EnrollmentController.generarComprobante);
 
 module.exports = router;
