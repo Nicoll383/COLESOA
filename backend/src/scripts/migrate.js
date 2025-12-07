@@ -187,6 +187,90 @@ const createTables = async () => {
     `);
     console.log('✓ Tabla configuración creada');
 
+    // Tabla de cursos/materias
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS cursos (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        codigo VARCHAR(20) UNIQUE NOT NULL,
+        nombre VARCHAR(100) NOT NULL,
+        descripcion TEXT,
+        nivel ENUM('primaria', 'inicial', 'secundaria') DEFAULT 'primaria',
+        grado_id INT,
+        horas_semanales INT DEFAULT 2,
+        color VARCHAR(20) DEFAULT '#667eea',
+        estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE SET NULL,
+        INDEX idx_codigo (codigo),
+        INDEX idx_nivel (nivel),
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla cursos creada');
+
+    // Tabla de asignación de cursos a secciones
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS seccion_cursos (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        seccion_id INT NOT NULL,
+        curso_id INT NOT NULL,
+        docente_id INT,
+        año_escolar INT NOT NULL,
+        estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON DELETE CASCADE,
+        FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE,
+        FOREIGN KEY (docente_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+        UNIQUE KEY unique_seccion_curso (seccion_id, curso_id, año_escolar),
+        INDEX idx_año (año_escolar),
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla seccion_cursos creada');
+
+    // Tabla de horarios
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS horarios (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        seccion_curso_id INT NOT NULL,
+        dia_semana ENUM('lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado') NOT NULL,
+        hora_inicio TIME NOT NULL,
+        hora_fin TIME NOT NULL,
+        aula VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (seccion_curso_id) REFERENCES seccion_cursos(id) ON DELETE CASCADE,
+        INDEX idx_dia (dia_semana),
+        INDEX idx_hora (hora_inicio)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla horarios creada');
+
+    // Tabla de historial académico
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS historial_academico (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        estudiante_id INT NOT NULL,
+        grado_id INT NOT NULL,
+        seccion_id INT,
+        año_escolar INT NOT NULL,
+        estado ENUM('en_curso', 'aprobado', 'desaprobado', 'retirado') DEFAULT 'en_curso',
+        promedio_final DECIMAL(4, 2),
+        observaciones TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
+        FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE CASCADE,
+        FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON DELETE SET NULL,
+        UNIQUE KEY unique_estudiante_año (estudiante_id, año_escolar),
+        INDEX idx_año (año_escolar),
+        INDEX idx_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Tabla historial_academico creada');
+
     console.log('\n✅ Todas las tablas fueron creadas exitosamente\n');
   } catch (error) {
     console.error('❌ Error al crear tablas:', error.message);

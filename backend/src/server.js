@@ -36,6 +36,9 @@ app.use('/api/students', require('./routes/student.routes'));
 app.use('/api/enrollments', require('./routes/enrollment.routes'));
 app.use('/api/payments', require('./routes/payment.routes'));
 app.use('/api/reniec', require('./routes/reniec.routes'));
+app.use('/api/grados', require('./routes/grado.routes'));
+app.use('/api/secciones', require('./routes/seccion.routes'));
+app.use('/api/cursos', require('./routes/curso.routes'));
 
 // Error handler
 app.use((err, req, res, next) => {

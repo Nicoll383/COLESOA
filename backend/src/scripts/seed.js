@@ -96,6 +96,22 @@ const seedData = async () => {
     `);
     console.log('✓ Configuración insertada');
 
+    // 7. Cursos de primaria
+    console.log('Insertando cursos...');
+    await pool.execute(`
+      INSERT INTO cursos (codigo, nombre, descripcion, nivel, horas_semanales, color, estado) VALUES
+      ('MAT-P', 'Matemática', 'Curso de matemáticas para primaria', 'primaria', 6, '#3b82f6', 'activo'),
+      ('COM-P', 'Comunicación', 'Curso de comunicación y lenguaje', 'primaria', 6, '#10b981', 'activo'),
+      ('CYT-P', 'Ciencia y Tecnología', 'Curso de ciencias naturales y tecnología', 'primaria', 4, '#8b5cf6', 'activo'),
+      ('PS-P', 'Personal Social', 'Curso de historia, geografía y cívica', 'primaria', 4, '#f59e0b', 'activo'),
+      ('ART-P', 'Arte y Cultura', 'Curso de educación artística', 'primaria', 2, '#ec4899', 'activo'),
+      ('EF-P', 'Educación Física', 'Curso de educación física y deportes', 'primaria', 3, '#ef4444', 'activo'),
+      ('ING-P', 'Inglés', 'Curso de idioma inglés', 'primaria', 3, '#06b6d4', 'activo'),
+      ('REL-P', 'Educación Religiosa', 'Curso de formación religiosa', 'primaria', 2, '#f97316', 'activo')
+      ON DUPLICATE KEY UPDATE id=id
+    `);
+    console.log('✓ Cursos insertados');
+
     console.log('\n✅ Datos de prueba insertados exitosamente\n');
     console.log('📝 Usuarios de prueba creados:');
     console.log('   Admin:      admin@colegiosoa.edu.pe / Password123!');
