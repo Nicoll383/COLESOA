@@ -29,5 +29,15 @@ export default {
   // Cambiar contraseña
   changePassword(id, newPassword) {
     return api.patch(`/users/${id}/password`, { newPassword })
+  },
+
+  // Obtener permisos de un usuario
+  getPermisos(id) {
+    return api.get(`/users/${id}/permisos`)
+  },
+
+  // Actualizar permisos de un usuario
+  updatePermisos(id, permisos) {
+    return api.put(`/users/${id}/permisos`, { permisos })
   }
 }

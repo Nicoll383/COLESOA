@@ -116,6 +116,13 @@
                       ✏️
                     </button>
                     <button
+                      @click="openPermissionsModal(user)"
+                      class="btn-action"
+                      title="Permisos"
+                    >
+                      🔐
+                    </button>
+                    <button
                       @click="openPasswordModal(user)"
                       class="btn-action"
                       title="Cambiar contraseña"
@@ -316,6 +323,166 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal Permissions -->
+      <div v-if="showPermissionsModal" class="modal-overlay" @click.self="closePermissionsModal">
+        <div class="modal-content modal-large">
+          <div class="modal-header">
+            <h2 class="modal-title">Gestionar Permisos</h2>
+            <button @click="closePermissionsModal" class="modal-close">×</button>
+          </div>
+
+          <div class="modal-body">
+            <div v-if="permissionsError" class="alert alert-error">{{ permissionsError }}</div>
+
+            <p class="mb-4">
+              Configurar permisos para: <strong>{{ selectedUser?.nombre }} {{ selectedUser?.apellido }}</strong>
+              <span class="role-badge ml-2" :class="`role-${selectedUser?.rol}`">
+                {{ getRolLabel(selectedUser?.rol) }}
+              </span>
+            </p>
+
+            <div v-if="loadingPermissions" class="text-center py-4">
+              <p class="text-gray-600">Cargando permisos...</p>
+            </div>
+
+            <div v-else class="permissions-grid">
+              <!-- Estudiantes -->
+              <div class="permission-module">
+                <h4 class="module-title">👥 Estudiantes</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.estudiantes.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.estudiantes.crear" />
+                    <span>Crear</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.estudiantes.editar" />
+                    <span>Editar</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.estudiantes.eliminar" />
+                    <span>Eliminar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Matrículas -->
+              <div class="permission-module">
+                <h4 class="module-title">📝 Matrículas</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.matriculas.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.matriculas.crear" />
+                    <span>Crear</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.matriculas.editar" />
+                    <span>Editar</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.matriculas.eliminar" />
+                    <span>Eliminar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pagos -->
+              <div class="permission-module">
+                <h4 class="module-title">💰 Pagos</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.pagos.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.pagos.crear" />
+                    <span>Crear</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.pagos.editar" />
+                    <span>Editar</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.pagos.eliminar" />
+                    <span>Eliminar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Documentos -->
+              <div class="permission-module">
+                <h4 class="module-title">📄 Documentos</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.documentos.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.documentos.aprobar" />
+                    <span>Aprobar</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.documentos.rechazar" />
+                    <span>Rechazar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Reportes -->
+              <div class="permission-module">
+                <h4 class="module-title">📊 Reportes</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.reportes.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.reportes.exportar" />
+                    <span>Exportar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Usuarios -->
+              <div class="permission-module">
+                <h4 class="module-title">👤 Usuarios</h4>
+                <div class="permission-checks">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.usuarios.ver" />
+                    <span>Ver</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.usuarios.crear" />
+                    <span>Crear</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.usuarios.editar" />
+                    <span>Editar</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="userPermisos.usuarios.eliminar" />
+                    <span>Eliminar</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="closePermissionsModal" class="btn btn-outline">Cancelar</button>
+            <button @click="savePermissions" :disabled="savingPermissions" class="btn btn-primary">
+              {{ savingPermissions ? 'Guardando...' : 'Guardar Permisos' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -355,6 +522,20 @@ const formData = ref({
 
 const newPassword = ref('')
 const confirmPassword = ref('')
+
+// Permissions modal
+const showPermissionsModal = ref(false)
+const loadingPermissions = ref(false)
+const savingPermissions = ref(false)
+const permissionsError = ref(null)
+const userPermisos = ref({
+  estudiantes: { ver: false, crear: false, editar: false, eliminar: false },
+  matriculas: { ver: false, crear: false, editar: false, eliminar: false },
+  pagos: { ver: false, crear: false, editar: false, eliminar: false },
+  documentos: { ver: false, aprobar: false, rechazar: false },
+  reportes: { ver: false, exportar: false },
+  usuarios: { ver: false, crear: false, editar: false, eliminar: false }
+})
 
 const filteredUsers = computed(() => {
   let result = [...users.value]
@@ -520,6 +701,53 @@ const closePasswordModal = () => {
   showPasswordModal.value = false
   selectedUser.value = null
   passwordError.value = null
+}
+
+const openPermissionsModal = async (user) => {
+  selectedUser.value = user
+  showPermissionsModal.value = true
+  loadingPermissions.value = true
+  permissionsError.value = null
+
+  try {
+    const response = await userService.getPermisos(user.id)
+    userPermisos.value = response.data.data.permisos
+  } catch (error) {
+    permissionsError.value = error.response?.data?.message || 'Error al cargar permisos'
+    console.error('Error:', error)
+  } finally {
+    loadingPermissions.value = false
+  }
+}
+
+const closePermissionsModal = () => {
+  showPermissionsModal.value = false
+  selectedUser.value = null
+  permissionsError.value = null
+  userPermisos.value = {
+    estudiantes: { ver: false, crear: false, editar: false, eliminar: false },
+    matriculas: { ver: false, crear: false, editar: false, eliminar: false },
+    pagos: { ver: false, crear: false, editar: false, eliminar: false },
+    documentos: { ver: false, aprobar: false, rechazar: false },
+    reportes: { ver: false, exportar: false },
+    usuarios: { ver: false, crear: false, editar: false, eliminar: false }
+  }
+}
+
+const savePermissions = async () => {
+  permissionsError.value = null
+  savingPermissions.value = true
+
+  try {
+    await userService.updatePermisos(selectedUser.value.id, userPermisos.value)
+    closePermissionsModal()
+    alert('Permisos actualizados exitosamente')
+  } catch (error) {
+    permissionsError.value = error.response?.data?.message || 'Error al actualizar permisos'
+    console.error('Error:', error)
+  } finally {
+    savingPermissions.value = false
+  }
 }
 
 const getInitials = (user) => {
@@ -891,5 +1119,89 @@ onMounted(() => {
 
 .mb-4 {
   margin-bottom: 1.5rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+/* Permissions Modal */
+.modal-large {
+  max-width: 800px;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.permission-module {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.permission-module:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.module-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permission-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.checkbox-label:hover {
+  background-color: #edf2f7;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.checkbox-label span {
+  font-size: 0.9375rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-4 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.text-gray-600 {
+  color: #718096;
 }
 </style>
