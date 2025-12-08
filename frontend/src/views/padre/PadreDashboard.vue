@@ -20,10 +20,17 @@
 
       <div class="card">
         <h2 class="text-xl font-semibold mb-4">Mis Hijos</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
             <h3 class="font-medium mb-1">Datos del Estudiante</h3>
             <p class="text-sm text-gray-600">Ver información</p>
+          </div>
+          <div
+            @click="router.push('/padre/documentos')"
+            class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors hover:border-primary"
+          >
+            <h3 class="font-medium mb-1">📄 Documentos</h3>
+            <p class="text-sm text-gray-600">Subir documentos requeridos</p>
           </div>
           <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
             <h3 class="font-medium mb-1">Pagos</h3>

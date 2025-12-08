@@ -50,6 +50,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['padre'] }
   },
   {
+    path: '/padre/documentos',
+    name: 'PadreDocumentos',
+    component: () => import('@/views/padre/DocumentosUpload.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
     path: '/users',
     name: 'UsersManagement',
     component: () => import('@/views/users/UsersManagement.vue'),
