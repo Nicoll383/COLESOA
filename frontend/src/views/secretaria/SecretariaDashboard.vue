@@ -33,9 +33,12 @@
             <h3 class="font-medium mb-1">Matrículas</h3>
             <p class="text-sm text-gray-600">Gestionar matrículas</p>
           </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Documentos</h3>
-            <p class="text-sm text-gray-600">Administrar documentación</p>
+          <div
+            @click="router.push('/secretaria/documentos')"
+            class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors hover:border-primary"
+          >
+            <h3 class="font-medium mb-1">📄 Documentos</h3>
+            <p class="text-sm text-gray-600">Aprobar documentos de estudiantes</p>
           </div>
         </div>
       </div>

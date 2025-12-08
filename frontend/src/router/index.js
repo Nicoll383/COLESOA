@@ -32,6 +32,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
   },
   {
+    path: '/secretaria/documentos',
+    name: 'SecretariaDocumentos',
+    component: () => import('@/views/secretaria/DocumentosAprobacion.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
     path: '/finanzas',
     name: 'FinanzasDashboard',
     component: () => import('@/views/finanzas/FinanzasDashboard.vue'),
