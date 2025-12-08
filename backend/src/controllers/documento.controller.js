@@ -1,4 +1,5 @@
 const Documento = require('../models/Documento');
+const emailService = require('../services/email.service');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -146,6 +147,32 @@ class DocumentoController {
         req.user.id,
         observaciones
       );
+
+      // Enviar notificación por email si el documento fue aceptado o rechazado
+      if (estado === 'aceptado' || estado === 'rechazado') {
+        try {
+          // Obtener información adicional para el email
+          const documentoDetalle = await Documento.getDocumentosEstudiante(
+            documento.estudiante_id
+          );
+
+          const docInfo = documentoDetalle.find(d => d.id === parseInt(id));
+
+          if (docInfo && docInfo.padre_email) {
+            await emailService.enviarNotificacionDocumento({
+              email: docInfo.padre_email,
+              nombrePadre: `${docInfo.padre_nombre} ${docInfo.padre_apellido}`,
+              nombreEstudiante: `${docInfo.estudiante_nombre} ${docInfo.estudiante_apellido}`,
+              nombreDocumento: docInfo.nombre,
+              estado: estado,
+              observaciones: observaciones || ''
+            });
+          }
+        } catch (emailError) {
+          console.error('Error al enviar notificación por email:', emailError);
+          // No falla la operación si el email falla
+        }
+      }
 
       res.json({
         success: true,
