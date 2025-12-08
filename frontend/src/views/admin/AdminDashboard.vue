@@ -1,96 +1,317 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
+  <AppLayout>
+    <div class="page-container">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div>
+          <h1 class="page-title">Bienvenido, {{ user?.nombre }}</h1>
+          <p class="page-subtitle">Administrador - Panel de Control</p>
+        </div>
+        <div class="current-date">
+          <span class="text-sm text-gray-600">{{ currentDate }}</span>
+        </div>
+      </div>
+
+      <!-- Estadísticas Rápidas -->
+      <div class="stats-grid">
+        <div class="stat-card bg-gradient-blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Estudiantes Activos</h3>
+            <p class="stat-value">{{ stats.estudiantes }}</p>
           </div>
-          <h2 class="font-semibold text-gray-900">Panel de Administrador</h2>
         </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
-        </div>
-      </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-6">Dashboard - Administrador</h1>
+        <div class="stat-card bg-gradient-green">
+          <div class="stat-icon">📝</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Matrículas 2025</h3>
+            <p class="stat-value">{{ stats.matriculas }}</p>
+          </div>
+        </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="card bg-blue-500 text-white">
-          <h3 class="text-sm font-medium mb-2">Total Usuarios</h3>
-          <p class="text-3xl font-bold">--</p>
+        <div class="stat-card bg-gradient-yellow">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Pagos Pendientes</h3>
+            <p class="stat-value">{{ stats.pagosPendientes }}</p>
+          </div>
         </div>
-        <div class="card bg-green-500 text-white">
-          <h3 class="text-sm font-medium mb-2">Estudiantes Activos</h3>
-          <p class="text-3xl font-bold">--</p>
-        </div>
-        <div class="card bg-yellow-500 text-white">
-          <h3 class="text-sm font-medium mb-2">Matrículas 2025</h3>
-          <p class="text-3xl font-bold">--</p>
-        </div>
-        <div class="card bg-purple-500 text-white">
-          <h3 class="text-sm font-medium mb-2">Docentes</h3>
-          <p class="text-3xl font-bold">--</p>
+
+        <div class="stat-card bg-gradient-purple">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <h3 class="stat-label">Reportes</h3>
+            <p class="stat-value">{{ stats.reportes }}</p>
+          </div>
         </div>
       </div>
 
+      <!-- Accesos Rápidos -->
       <div class="card">
-        <h2 class="text-xl font-semibold mb-4">Módulos Disponibles</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Gestión de Usuarios</h3>
-            <p class="text-sm text-gray-600">Administrar usuarios del sistema</p>
+        <h2 class="section-title">Accesos Rápidos</h2>
+        <div class="quick-actions-grid">
+          <router-link to="/users" class="quick-action-card">
+            <div class="action-icon">👥</div>
+            <div class="action-content">
+              <h3 class="action-title">Gestionar Estudiantes</h3>
+              <p class="action-description">Ver, crear y editar estudiantes</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+
+          <router-link to="/enrollments" class="quick-action-card">
+            <div class="action-icon">📝</div>
+            <div class="action-content">
+              <h3 class="action-title">Matrículas</h3>
+              <p class="action-description">Gestionar proceso de matrícula</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+
+          <router-link to="/payments" class="quick-action-card">
+            <div class="action-icon">💰</div>
+            <div class="action-content">
+              <h3 class="action-title">Pagos</h3>
+              <p class="action-description">Control de pagos y pensiones</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+
+          <router-link to="/reports" class="quick-action-card">
+            <div class="action-icon">📊</div>
+            <div class="action-content">
+              <h3 class="action-title">Reportes</h3>
+              <p class="action-description">Ver reportes y estadísticas</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Información Adicional -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="card">
+          <h2 class="section-title mb-4">Actividad Reciente</h2>
+          <div class="text-center py-8 text-gray-500">
+            <p>No hay actividad reciente</p>
           </div>
-          <div @click="goToStudents" class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Estudiantes</h3>
-            <p class="text-sm text-gray-600">Ver y gestionar estudiantes</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Matrículas</h3>
-            <p class="text-sm text-gray-600">Procesos de matrícula</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Pagos</h3>
-            <p class="text-sm text-gray-600">Control financiero</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Reportes</h3>
-            <p class="text-sm text-gray-600">Estadísticas e informes</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Configuración</h3>
-            <p class="text-sm text-gray-600">Ajustes del sistema</p>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title mb-4">Notificaciones</h2>
+          <div class="text-center py-8 text-gray-500">
+            <p>No hay notificaciones nuevas</p>
           </div>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
-
 const user = computed(() => authStore.user)
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
-}
+const stats = ref({
+  estudiantes: '--',
+  matriculas: '--',
+  pagosPendientes: '--',
+  reportes: '--'
+})
 
-const goToStudents = () => {
-  router.push('/students')
-}
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('es-PE', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+})
+
+onMounted(async () => {
+  // TODO: Cargar estadísticas reales desde API
+})
 </script>
 
 <style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+}
+
+.current-date {
+  text-transform: capitalize;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.bg-gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.bg-gradient-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.bg-gradient-yellow {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.bg-gradient-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin: 0 0 0.5rem 0;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.quick-action-card:hover {
+  background: white;
+  border-color: #3b82f6;
+  transform: translateX(4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.action-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.action-arrow {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.quick-action-card:hover .action-arrow {
+  opacity: 1;
+}
+
 .grid {
   display: grid;
 }
@@ -105,32 +326,36 @@ const goToStudents = () => {
   }
 }
 
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .lg\:grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
 .gap-6 {
   gap: 1.5rem;
 }
 
-.border {
-  border: 1px solid #e5e7eb;
+.mt-6 {
+  margin-top: 1.5rem;
 }
 
-.hover\:bg-gray-50:hover {
-  background-color: #f9fafb;
+.mb-4 {
+  margin-bottom: 1rem;
 }
 
-.cursor-pointer {
-  cursor: pointer;
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 </style>

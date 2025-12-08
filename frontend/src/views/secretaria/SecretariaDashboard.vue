@@ -1,62 +1,194 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">Panel de Secretaría</h2>
+  <AppLayout>
+    <div class="page-container">
+      <div class="dashboard-header">
+        <div>
+          <h1 class="page-title">Bienvenido, {{ user?.nombre }}</h1>
+          <p class="page-subtitle">Secretaría - Panel de Control</p>
         </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
+        <div class="current-date">
+          <span class="text-sm text-gray-600">{{ currentDate }}</span>
         </div>
       </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-6">Dashboard - Secretaría</h1>
+      <div class="card">
+        <h2 class="section-title">Accesos Rápidos</h2>
+        <div class="quick-actions-grid">
+          <router-link to="/enrollments/create" class="quick-action-card">
+            <div class="action-icon">📝</div>
+            <div class="action-content">
+              <h3 class="action-title">Nueva Matrícula</h3>
+              <p class="action-description">Registrar nuevo estudiante</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
 
-      <div class="card mb-6">
-        <h2 class="text-xl font-semibold mb-4">Funciones Principales</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Nueva Matrícula</h3>
-            <p class="text-sm text-gray-600">Registrar nuevo estudiante</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Estudiantes</h3>
-            <p class="text-sm text-gray-600">Ver lista de estudiantes</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Matrículas</h3>
-            <p class="text-sm text-gray-600">Gestionar matrículas</p>
-          </div>
-          <div
-            @click="router.push('/secretaria/documentos')"
-            class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors hover:border-primary"
-          >
-            <h3 class="font-medium mb-1">📄 Documentos</h3>
-            <p class="text-sm text-gray-600">Aprobar documentos de estudiantes</p>
-          </div>
+          <router-link to="/students" class="quick-action-card">
+            <div class="action-icon">👥</div>
+            <div class="action-content">
+              <h3 class="action-title">Estudiantes</h3>
+              <p class="action-description">Ver lista de estudiantes</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+
+          <router-link to="/enrollments" class="quick-action-card">
+            <div class="action-icon">📋</div>
+            <div class="action-content">
+              <h3 class="action-title">Matrículas</h3>
+              <p class="action-description">Gestionar matrículas</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
+
+          <router-link to="/secretaria/documentos" class="quick-action-card">
+            <div class="action-icon">📄</div>
+            <div class="action-content">
+              <h3 class="action-title">Documentos</h3>
+              <p class="action-description">Aprobar documentos de estudiantes</p>
+            </div>
+            <div class="action-arrow">→</div>
+          </router-link>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
-}
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('es-PE', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+})
 </script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+}
+
+.current-date {
+  text-transform: capitalize;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.quick-action-card:hover {
+  background: white;
+  border-color: #3b82f6;
+  transform: translateX(4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-center: center;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.action-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.action-arrow {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.quick-action-card:hover .action-arrow {
+  opacity: 1;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+</style>
