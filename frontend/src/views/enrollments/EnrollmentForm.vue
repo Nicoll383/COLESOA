@@ -123,12 +123,14 @@
         <div v-if="currentStep === 2" class="step-content">
           <h2 class="step-title">
             <span class="step-icon">📚</span>
-            Seleccionar Grado y Sección
+            {{ !selectedGrado ? 'Seleccionar Grado' : 'Seleccionar Sección' }}
           </h2>
-          <p class="step-description">Elija el grado y sección para la matrícula</p>
+          <p class="step-description">
+            {{ !selectedGrado ? 'Elija el grado para la matrícula' : `Elija la sección para ${selectedGrado}` }}
+          </p>
 
           <div v-if="loadingSecciones" class="text-center py-8">
-            <p class="text-gray-600">Cargando secciones disponibles...</p>
+            <p class="text-gray-600">Cargando grados y secciones disponibles...</p>
           </div>
 
           <div v-else-if="errorSecciones" class="alert alert-error">
@@ -136,12 +138,49 @@
           </div>
 
           <div v-else class="sections-container">
-            <!-- Agrupado por grado -->
-            <div v-for="(secciones, grado) in seccionesPorGrado" :key="grado" class="grade-group">
-              <h3 class="grade-title">{{ grado }}</h3>
+            <!-- Paso 2A: Seleccionar Grado -->
+            <div v-if="!selectedGrado" class="grades-grid">
+              <div
+                v-for="grado in gradosDisponibles"
+                :key="grado.nombre"
+                class="grade-card"
+                :class="{ 'grade-card-disabled': grado.total_vacantes === 0 }"
+                @click="grado.total_vacantes > 0 && selectGrado(grado.nombre)"
+              >
+                <div class="grade-icon">🎓</div>
+                <h3 class="grade-name">{{ grado.nombre }}</h3>
+                <div class="grade-info">
+                  <p class="grade-sections">{{ grado.total_secciones }} {{ grado.total_secciones === 1 ? 'sección' : 'secciones' }}</p>
+                  <span class="grade-vacancies" :class="{
+                    'text-success': grado.total_vacantes > 10,
+                    'text-warning': grado.total_vacantes > 0 && grado.total_vacantes <= 10,
+                    'text-danger': grado.total_vacantes === 0
+                  }">
+                    {{ grado.total_vacantes }} vacantes
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="gradosDisponibles.length === 0" class="text-center py-8 text-gray-500">
+                No hay grados disponibles para el año escolar {{ añoEscolar }}
+              </div>
+            </div>
+
+            <!-- Paso 2B: Seleccionar Sección (después de elegir grado) -->
+            <div v-else>
+              <div class="selected-grade-banner">
+                <div class="banner-content">
+                  <span class="banner-icon">📚</span>
+                  <span class="banner-text">Grado seleccionado: <strong>{{ selectedGrado }}</strong></span>
+                </div>
+                <button @click="selectedGrado = null; selectedSeccion = null" class="btn-change">
+                  Cambiar Grado
+                </button>
+              </div>
+
               <div class="sections-grid">
                 <div
-                  v-for="seccion in secciones"
+                  v-for="seccion in seccionesFiltradas"
                   :key="seccion.id"
                   class="section-card"
                   :class="{
@@ -177,10 +216,10 @@
                   <div v-if="selectedSeccion?.id === seccion.id" class="section-check">✓</div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="Object.keys(seccionesPorGrado).length === 0" class="text-center py-8 text-gray-500">
-              No hay secciones disponibles para el año escolar {{ añoEscolar }}
+              <div v-if="seccionesFiltradas.length === 0" class="text-center py-8 text-gray-500">
+                No hay secciones disponibles para {{ selectedGrado }}
+              </div>
             </div>
           </div>
 
@@ -371,6 +410,7 @@ const selectedStudent = ref(null)
 const loadingSecciones = ref(false)
 const errorSecciones = ref(null)
 const secciones = ref([])
+const selectedGrado = ref(null)
 const selectedSeccion = ref(null)
 
 // Step 3: Create Enrollment
@@ -382,15 +422,26 @@ const montoMatricula = ref(500.00)
 const createdEnrollment = ref(null)
 
 // Computed
-const seccionesPorGrado = computed(() => {
-  const grouped = {}
+const gradosDisponibles = computed(() => {
+  const grados = {}
   secciones.value.forEach(seccion => {
-    if (!grouped[seccion.grado_nombre]) {
-      grouped[seccion.grado_nombre] = []
+    if (!grados[seccion.grado_nombre]) {
+      grados[seccion.grado_nombre] = {
+        nombre: seccion.grado_nombre,
+        grado_id: seccion.grado_id,
+        total_vacantes: 0,
+        total_secciones: 0
+      }
     }
-    grouped[seccion.grado_nombre].push(seccion)
+    grados[seccion.grado_nombre].total_vacantes += seccion.vacantes_disponibles
+    grados[seccion.grado_nombre].total_secciones++
   })
-  return grouped
+  return Object.values(grados)
+})
+
+const seccionesFiltradas = computed(() => {
+  if (!selectedGrado.value) return []
+  return secciones.value.filter(s => s.grado_nombre === selectedGrado.value)
 })
 
 // Methods
@@ -421,6 +472,11 @@ const searchStudents = async () => {
 
 const selectStudent = (student) => {
   selectedStudent.value = student
+}
+
+const selectGrado = (gradoNombre) => {
+  selectedGrado.value = gradoNombre
+  selectedSeccion.value = null // Reset section when changing grade
 }
 
 const selectSeccion = (seccion) => {
@@ -819,6 +875,116 @@ onMounted(() => {
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e5e7eb;
+}
+
+/* Grades Grid */
+.grades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.grade-card {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  position: relative;
+}
+
+.grade-card:hover {
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+  border-color: #667eea;
+  transform: translateY(-8px);
+  box-shadow: 0 12px 20px -5px rgba(102, 126, 234, 0.3);
+}
+
+.grade-card-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.grade-card-disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-color: #e5e7eb;
+}
+
+.grade-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.grade-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 1rem 0;
+}
+
+.grade-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.grade-sections {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.grade-vacancies {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Selected Grade Banner */
+.selected-grade-banner {
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+  border: 2px solid #667eea;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.banner-icon {
+  font-size: 2rem;
+}
+
+.banner-text {
+  font-size: 1.125rem;
+  color: #4a5568;
+}
+
+.btn-change {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-change:hover {
+  background: #667eea;
+  color: white;
 }
 
 .sections-grid {
