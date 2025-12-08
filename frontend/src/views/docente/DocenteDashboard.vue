@@ -1,51 +1,410 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">Panel de Docente</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
+  <AppLayout>
+    <div class="page-container">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div>
+          <h1 class="page-title">Panel Docente</h1>
+          <p class="page-subtitle">Gestión de estudiantes, notas y asistencias</p>
         </div>
       </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-6">Dashboard - Docente</h1>
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card stat-info">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <p class="stat-label">Mis Estudiantes</p>
+            <p class="stat-value">{{ stats.totalEstudiantes }}</p>
+          </div>
+        </div>
 
+        <div class="stat-card stat-success">
+          <div class="stat-icon">📚</div>
+          <div class="stat-content">
+            <p class="stat-label">Cursos Asignados</p>
+            <p class="stat-value">{{ stats.cursosAsignados }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+          <div class="stat-icon">📝</div>
+          <div class="stat-content">
+            <p class="stat-label">Notas Pendientes</p>
+            <p class="stat-value">{{ stats.notasPendientes }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-primary">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <p class="stat-label">Asistencia Promedio</p>
+            <p class="stat-value">{{ stats.asistenciaPromedio }}%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Módulos -->
+      <div class="modules-grid">
+        <div @click="router.push('/students')" class="module-card module-info">
+          <div class="module-icon">👨‍🎓</div>
+          <h3 class="module-title">Mis Estudiantes</h3>
+          <p class="module-description">Ver lista de estudiantes asignados</p>
+        </div>
+
+        <div class="module-card module-success">
+          <div class="module-icon">📝</div>
+          <h3 class="module-title">Registrar Notas</h3>
+          <p class="module-description">Ingresar calificaciones de evaluaciones</p>
+        </div>
+
+        <div class="module-card module-primary">
+          <div class="module-icon">✅</div>
+          <h3 class="module-title">Tomar Asistencia</h3>
+          <p class="module-description">Registrar asistencia diaria</p>
+        </div>
+
+        <div class="module-card module-warning">
+          <div class="module-icon">📊</div>
+          <h3 class="module-title">Reportes</h3>
+          <p class="module-description">Ver rendimiento académico</p>
+        </div>
+      </div>
+
+      <!-- Secciones Asignadas -->
       <div class="card">
-        <h2 class="text-xl font-semibold mb-4">Mis Secciones</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Mis Estudiantes</h3>
-            <p class="text-sm text-gray-600">Ver lista de estudiantes</p>
-          </div>
-          <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-medium mb-1">Horarios</h3>
-            <p class="text-sm text-gray-600">Ver horario de clases</p>
+        <h2 class="section-title">📚 Mis Secciones</h2>
+
+        <div v-if="secciones.length > 0" class="secciones-grid">
+          <div v-for="seccion in secciones" :key="seccion.id" class="seccion-card">
+            <div class="seccion-header">
+              <h3 class="seccion-title">{{ seccion.grado_nombre }} - Sección {{ seccion.nombre }}</h3>
+              <span class="seccion-badge">{{ seccion.estudiantes_count }} estudiantes</span>
+            </div>
+            <div class="seccion-info">
+              <p><strong>Aula:</strong> {{ seccion.aula }}</p>
+              <p><strong>Turno:</strong> {{ seccion.turno }}</p>
+            </div>
+            <div class="seccion-actions">
+              <button class="btn-action btn-primary-action">Ver Estudiantes</button>
+              <button class="btn-action btn-success-action">Asistencia</button>
+            </div>
           </div>
         </div>
+
+        <div v-else class="empty-state">
+          <div class="empty-icon">📚</div>
+          <p class="empty-text">No tienes secciones asignadas</p>
+        </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
+import api from '@/services/api'
 
 const router = useRouter()
-const authStore = useAuthStore()
-const user = computed(() => authStore.user)
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
+const stats = ref({
+  totalEstudiantes: 0,
+  cursosAsignados: 0,
+  notasPendientes: 0,
+  asistenciaPromedio: 0
+})
+
+const secciones = ref([])
+
+const loadStats = async () => {
+  try {
+    const response = await api.get('/docente/estadisticas')
+    if (response.data.success) {
+      stats.value = response.data.data
+    }
+  } catch (error) {
+    console.error('Error al cargar estadísticas:', error)
+  }
 }
+
+const loadSecciones = async () => {
+  try {
+    const response = await api.get('/docente/secciones')
+    if (response.data.success) {
+      secciones.value = response.data.data
+    }
+  } catch (error) {
+    console.error('Error al cargar secciones:', error)
+  }
+}
+
+onMounted(() => {
+  loadStats()
+  loadSecciones()
+})
 </script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 2px solid;
+}
+
+.stat-info {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+}
+
+.stat-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+}
+
+.stat-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+}
+
+.stat-primary {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-color: #6366f1;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 0.25rem 0;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.module-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  border: 2px solid;
+  background: white;
+}
+
+.module-info {
+  border-color: #3b82f6;
+}
+
+.module-success {
+  border-color: #10b981;
+}
+
+.module-primary {
+  border-color: #6366f1;
+}
+
+.module-warning {
+  border-color: #f59e0b;
+}
+
+.module-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.2);
+}
+
+.module-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.module-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.module-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.secciones-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.seccion-card {
+  padding: 1.5rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.seccion-card:hover {
+  border-color: #667eea;
+  transform: translateX(4px);
+}
+
+.seccion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.seccion-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.seccion-badge {
+  padding: 0.25rem 0.75rem;
+  background: #667eea;
+  color: white;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.seccion-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0;
+}
+
+.seccion-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-action {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary-action {
+  background: #667eea;
+  color: white;
+}
+
+.btn-success-action {
+  background: #10b981;
+  color: white;
+}
+
+.btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-text {
+  color: #6b7280;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .seccion-actions {
+    flex-direction: column;
+  }
+}
+</style>
