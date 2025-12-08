@@ -1,145 +1,150 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">Portal de Padres - Documentos</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="handleBack" class="btn btn-outline">Volver</button>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
+  <AppLayout>
+    <div class="page-container">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div>
+          <h1 class="page-title">Documentos del Estudiante</h1>
+          <p class="page-subtitle">Sube los documentos requeridos para la matrícula</p>
         </div>
       </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
-      <!-- Selector de Hijo -->
-      <div class="card mb-6" v-if="estudiantes.length > 0">
-        <h2 class="text-xl font-semibold mb-4">Seleccionar Estudiante</h2>
+      <!-- Selector de Estudiante -->
+      <div class="card mb-6" v-if="hijos.length > 0">
+        <label for="estudiante-select" class="selector-label">Seleccionar Estudiante:</label>
         <select
+          id="estudiante-select"
           v-model="estudianteSeleccionado"
           @change="cargarDocumentos"
-          class="input w-full md:w-1/2"
+          class="hijo-select"
         >
           <option :value="null">Seleccione un estudiante...</option>
           <option
-            v-for="estudiante in estudiantes"
-            :key="estudiante.id"
-            :value="estudiante.id"
+            v-for="hijo in hijos"
+            :key="hijo.id"
+            :value="hijo.id"
           >
-            {{ estudiante.nombre }} {{ estudiante.apellido }} - DNI: {{ estudiante.dni }}
+            {{ hijo.nombres }} {{ hijo.apellidos }} - DNI: {{ hijo.dni }}
           </option>
         </select>
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="text-center py-8">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p class="mt-4 text-gray-600">Cargando documentos...</p>
+      <div v-if="loading" class="card text-center py-8">
+        <p class="text-gray-600">Cargando documentos...</p>
+      </div>
+
+      <!-- No estudiante seleccionado -->
+      <div v-else-if="!estudianteSeleccionado" class="card text-center py-12">
+        <div class="empty-icon">👨‍👩‍👧‍👦</div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">Selecciona un estudiante</h3>
+        <p class="text-gray-600">Por favor selecciona un estudiante para ver los documentos requeridos</p>
       </div>
 
       <!-- Documentos Section -->
-      <div v-else-if="estudianteSeleccionado && documentos.length > 0">
+      <div v-else-if="documentos.length > 0">
         <!-- Progress Indicator -->
         <div class="card mb-6">
-          <h2 class="text-xl font-semibold mb-4">Progreso de Documentos</h2>
-          <div class="flex items-center gap-4 mb-4">
-            <div class="flex-1">
-              <div class="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  class="bg-green-500 h-3 rounded-full transition-all duration-300"
-                  :style="{ width: `${progreso}%` }"
-                ></div>
-              </div>
+          <h2 class="section-title">📊 Progreso de Documentos</h2>
+          <div class="progress-container">
+            <div class="progress-bar-wrapper">
+              <div
+                class="progress-bar"
+                :style="{ width: `${progreso}%` }"
+              ></div>
             </div>
-            <span class="text-sm font-medium text-gray-700">
+            <span class="progress-text">
               {{ documentosCompletados }}/{{ documentos.length }} completados
             </span>
           </div>
 
           <!-- Visual Guide -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 bg-blue-500 rounded"></div>
-              <span class="text-sm">{{ documentosEnviados }} Documentos enviados</span>
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="legend-dot legend-pending"></div>
+              <span>{{ documentosPendientes }} Pendientes</span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 bg-yellow-500 rounded"></div>
-              <span class="text-sm">{{ documentosEnRevision }} Documentos en revisión</span>
+            <div class="legend-item">
+              <div class="legend-dot legend-enviado"></div>
+              <span>{{ documentosEnviados }} Enviados</span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 bg-green-500 rounded"></div>
-              <span class="text-sm">{{ documentosAceptados }} Documentos aceptados</span>
+            <div class="legend-item">
+              <div class="legend-dot legend-revision"></div>
+              <span>{{ documentosEnRevision }} En Revisión</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot legend-aceptado"></div>
+              <span>{{ documentosAceptados }} Aceptados</span>
+            </div>
+            <div class="legend-item" v-if="documentosRechazados > 0">
+              <div class="legend-dot legend-rechazado"></div>
+              <span>{{ documentosRechazados }} Rechazados</span>
             </div>
           </div>
         </div>
 
         <!-- List of Documents -->
-        <div class="space-y-4">
+        <div class="documentos-list">
           <div
             v-for="documento in documentos"
             :key="documento.id"
-            class="card"
+            class="documento-card"
           >
-            <div class="flex flex-col md:flex-row md:items-start gap-4">
+            <div class="documento-content">
               <!-- Document Info -->
-              <div class="flex-1">
-                <div class="flex items-start justify-between mb-2">
+              <div class="documento-info">
+                <div class="documento-header-row">
                   <div>
-                    <h3 class="font-semibold text-lg">{{ documento.nombre }}</h3>
-                    <p class="text-sm text-gray-600 mt-1">{{ documento.descripcion }}</p>
-                    <p class="text-xs text-gray-500 mt-1">
-                      Formatos permitidos: {{ documento.tipo_archivo }}
+                    <h3 class="documento-nombre">{{ documento.tipo_documento }}</h3>
+                    <p class="documento-desc" v-if="documento.descripcion">{{ documento.descripcion }}</p>
+                    <p class="documento-formato">
+                      Formatos: {{ documento.mime_type || 'PDF, JPG, PNG' }}
                     </p>
                   </div>
                   <span
-                    class="badge text-xs px-3 py-1 rounded-full font-medium"
-                    :class="getEstadoClass(documento.estado)"
+                    class="estado-badge"
+                    :class="getEstadoClass(documento.estado_verificacion)"
                   >
-                    {{ getEstadoLabel(documento.estado) }}
+                    {{ getEstadoLabel(documento.estado_verificacion) }}
                   </span>
                 </div>
 
                 <!-- Current File Info -->
-                <div v-if="documento.archivo_url" class="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div v-if="documento.ruta_archivo" class="archivo-actual">
+                  <div class="archivo-info-row">
+                    <div class="archivo-details">
+                      <svg class="archivo-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <span class="text-sm font-medium">{{ documento.nombre_archivo }}</span>
+                      <span class="archivo-nombre">{{ documento.nombre_archivo }}</span>
                     </div>
                     <a
-                      :href="getFileUrl(documento.archivo_url)"
+                      :href="getFileUrl(documento.ruta_archivo)"
                       target="_blank"
-                      class="text-sm text-primary hover:underline"
+                      class="btn-ver-archivo"
                     >
                       Ver documento
                     </a>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">
-                    Subido el {{ formatDate(documento.fecha_subida) }}
+                  <p class="archivo-fecha">
+                    Subido el {{ formatDate(documento.created_at) }}
                   </p>
                 </div>
 
                 <!-- Observaciones (if rejected) -->
-                <div v-if="documento.estado === 'rechazado' && documento.observaciones"
-                     class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p class="text-sm font-medium text-red-800">Motivo del rechazo:</p>
-                  <p class="text-sm text-red-700 mt-1">{{ documento.observaciones }}</p>
+                <div v-if="documento.estado_verificacion === 'rechazado' && documento.observaciones"
+                     class="observaciones-rechazado">
+                  <p class="observaciones-title">Motivo del rechazo:</p>
+                  <p class="observaciones-text">{{ documento.observaciones }}</p>
                 </div>
               </div>
 
               <!-- Upload Area -->
-              <div class="md:w-64">
+              <div class="upload-area">
                 <div
-                  v-if="documento.estado !== 'aceptado'"
-                  class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer"
-                  :class="{ 'border-primary bg-primary/5': uploadingDoc === documento.id }"
+                  v-if="documento.estado_verificacion !== 'aprobado'"
+                  class="upload-zone"
+                  :class="{ 'upload-zone-active': uploadingDoc === documento.id }"
                   @click="$refs[`fileInput${documento.id}`][0].click()"
                   @dragover.prevent="handleDragOver($event, documento.id)"
                   @dragleave.prevent="handleDragLeave($event, documento.id)"
@@ -148,35 +153,35 @@
                   <input
                     :ref="`fileInput${documento.id}`"
                     type="file"
-                    class="hidden"
-                    :accept="getAcceptTypes(documento.tipo_archivo)"
+                    class="file-input-hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
                     @change="handleFileSelect($event, documento)"
                   />
 
-                  <svg v-if="uploadingDoc !== documento.id" class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg v-if="uploadingDoc !== documento.id" class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <div v-else class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <div v-else class="loading-spinner"></div>
 
-                  <p class="text-sm font-medium text-gray-700">
-                    {{ uploadingDoc === documento.id ? 'Subiendo...' : (documento.archivo_url ? 'Cambiar archivo' : 'Subir archivo') }}
+                  <p class="upload-text">
+                    {{ uploadingDoc === documento.id ? 'Subiendo...' : (documento.ruta_archivo ? 'Cambiar archivo' : 'Subir archivo') }}
                   </p>
-                  <p class="text-xs text-gray-500 mt-1">
+                  <p class="upload-hint">
                     o arrastre aquí
                   </p>
                 </div>
-                <div v-else class="text-center text-green-600 py-4">
-                  <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div v-else class="upload-approved">
+                  <svg class="approved-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p class="text-sm font-medium">Documento aprobado</p>
+                  <p class="approved-text">Documento aprobado</p>
                 </div>
 
                 <!-- View Timeline Button -->
                 <button
-                  v-if="documento.archivo_url"
+                  v-if="documento.ruta_archivo"
                   @click="verSeguimiento(documento)"
-                  class="btn btn-outline btn-sm w-full mt-2"
+                  class="btn-seguimiento"
                 >
                   Ver seguimiento
                 </button>
@@ -186,63 +191,58 @@
         </div>
       </div>
 
-      <!-- No Student Selected -->
-      <div v-else-if="!estudianteSeleccionado" class="text-center py-12">
-        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <p class="text-gray-600">Seleccione un estudiante para ver los documentos requeridos</p>
+      <!-- No documents found -->
+      <div v-else-if="estudianteSeleccionado" class="card text-center py-12">
+        <div class="empty-icon">📄</div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No hay documentos requeridos</h3>
+        <p class="text-gray-600">No se encontraron documentos pendientes para este estudiante</p>
       </div>
-    </main>
+    </div>
 
     <!-- Timeline Modal -->
     <div
       v-if="showTimelineModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      class="modal-overlay"
       @click.self="showTimelineModal = false"
     >
-      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h3 class="text-xl font-semibold">Seguimiento del Documento</h3>
-          <button @click="showTimelineModal = false" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">📜 Seguimiento del Documento</h3>
+          <button @click="showTimelineModal = false" class="modal-close">&times;</button>
         </div>
 
-        <div class="p-6">
+        <div class="modal-body">
           <div v-if="loadingTimeline" class="text-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <div class="loading-spinner"></div>
           </div>
 
-          <div v-else-if="seguimiento.length > 0" class="space-y-4">
+          <div v-else-if="seguimiento.length > 0" class="timeline">
             <div
               v-for="(item, index) in seguimiento"
               :key="item.id"
-              class="relative pl-8 pb-4"
-              :class="{ 'border-l-2 border-gray-200': index < seguimiento.length - 1 }"
+              class="timeline-item"
+              :class="{ 'timeline-item-last': index === seguimiento.length - 1 }"
             >
               <div
-                class="absolute left-0 -translate-x-1/2 w-4 h-4 rounded-full"
+                class="timeline-dot"
                 :class="getTimelineColor(item.estado_nuevo)"
               ></div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <div class="flex items-start justify-between mb-2">
+              <div class="timeline-content">
+                <div class="timeline-content-header">
                   <span
-                    class="text-sm font-medium px-2 py-1 rounded"
+                    class="timeline-badge"
                     :class="getEstadoClass(item.estado_nuevo)"
                   >
                     {{ getEstadoLabel(item.estado_nuevo) }}
                   </span>
-                  <span class="text-xs text-gray-500">
+                  <span class="timeline-date">
                     {{ formatDate(item.created_at) }}
                   </span>
                 </div>
-                <p v-if="item.comentario" class="text-sm text-gray-700 mt-2">
+                <p v-if="item.comentario" class="timeline-comment">
                   {{ item.comentario }}
                 </p>
-                <p v-if="item.usuario_nombre" class="text-xs text-gray-500 mt-2">
+                <p v-if="item.usuario_nombre" class="timeline-user">
                   Por: {{ item.usuario_nombre }}
                 </p>
               </div>
@@ -255,21 +255,21 @@
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
+import api from '@/services/api'
 import documentoService from '@/services/documento.service'
-import { toast } from 'vue3-toastify'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const user = computed(() => authStore.user)
 
-const estudiantes = ref([])
+const hijos = ref([])
 const estudianteSeleccionado = ref(null)
 const documentos = ref([])
 const loading = ref(false)
@@ -277,23 +277,30 @@ const uploadingDoc = ref(null)
 const showTimelineModal = ref(false)
 const seguimiento = ref([])
 const loadingTimeline = ref(false)
-const currentDocument = ref(null)
 
 // Computed properties for progress
 const documentosCompletados = computed(() => {
-  return documentos.value.filter(d => d.estado === 'aceptado').length
+  return documentos.value.filter(d => d.estado_verificacion === 'aprobado').length
+})
+
+const documentosPendientes = computed(() => {
+  return documentos.value.filter(d => d.estado_verificacion === 'pendiente').length
 })
 
 const documentosEnviados = computed(() => {
-  return documentos.value.filter(d => d.estado === 'enviado').length
+  return documentos.value.filter(d => d.estado_verificacion === 'enviado').length
 })
 
 const documentosEnRevision = computed(() => {
-  return documentos.value.filter(d => d.estado === 'en_revision').length
+  return documentos.value.filter(d => d.estado_verificacion === 'en_revision').length
 })
 
 const documentosAceptados = computed(() => {
-  return documentos.value.filter(d => d.estado === 'aceptado').length
+  return documentos.value.filter(d => d.estado_verificacion === 'aprobado').length
+})
+
+const documentosRechazados = computed(() => {
+  return documentos.value.filter(d => d.estado_verificacion === 'rechazado').length
 })
 
 const progreso = computed(() => {
@@ -302,21 +309,28 @@ const progreso = computed(() => {
 })
 
 // Methods
-const cargarEstudiantes = async () => {
+const cargarHijos = async () => {
   try {
-    // TODO: Implementar API para obtener hijos del padre actual
-    // Por ahora, usaremos un mock. En producción, esto debería venir de una API
-    // que retorne los hijos asociados al padre logueado
-    estudiantes.value = []
-    toast.info('Debe implementar el endpoint para obtener los estudiantes del padre')
+    const response = await api.get('/padre/hijos')
+    hijos.value = response.data.data
+
+    // Si viene de un parámetro de query, seleccionar ese hijo
+    const estudianteId = router.currentRoute.value.query.estudiante
+    if (estudianteId && hijos.value.find(h => h.id == estudianteId)) {
+      estudianteSeleccionado.value = parseInt(estudianteId)
+      await cargarDocumentos()
+    }
   } catch (error) {
-    console.error('Error al cargar estudiantes:', error)
-    toast.error('Error al cargar la lista de estudiantes')
+    console.error('Error al cargar hijos:', error)
+    alert('Error al cargar la lista de estudiantes')
   }
 }
 
 const cargarDocumentos = async () => {
-  if (!estudianteSeleccionado.value) return
+  if (!estudianteSeleccionado.value) {
+    documentos.value = []
+    return
+  }
 
   loading.value = true
   try {
@@ -326,7 +340,7 @@ const cargarDocumentos = async () => {
     }
   } catch (error) {
     console.error('Error al cargar documentos:', error)
-    toast.error('Error al cargar documentos del estudiante')
+    alert('Error al cargar documentos del estudiante')
   } finally {
     loading.value = false
   }
@@ -340,15 +354,15 @@ const handleFileSelect = async (event, documento) => {
 }
 
 const handleDragOver = (event, docId) => {
-  event.currentTarget.classList.add('border-primary', 'bg-primary/5')
+  event.currentTarget.classList.add('upload-zone-dragover')
 }
 
 const handleDragLeave = (event, docId) => {
-  event.currentTarget.classList.remove('border-primary', 'bg-primary/5')
+  event.currentTarget.classList.remove('upload-zone-dragover')
 }
 
 const handleDrop = async (event, documento) => {
-  event.currentTarget.classList.remove('border-primary', 'bg-primary/5')
+  event.currentTarget.classList.remove('upload-zone-dragover')
   const file = event.dataTransfer.files[0]
   if (file) {
     await uploadFile(file, documento)
@@ -356,19 +370,10 @@ const handleDrop = async (event, documento) => {
 }
 
 const uploadFile = async (file, documento) => {
-  // Validate file type
-  const allowedTypes = documento.tipo_archivo.split(',').map(t => t.trim().toLowerCase())
-  const fileExtension = file.name.split('.').pop().toLowerCase()
-
-  if (!allowedTypes.includes(fileExtension)) {
-    toast.error(`Tipo de archivo no permitido. Solo se permiten: ${documento.tipo_archivo}`)
-    return
-  }
-
   // Validate file size (5MB max)
   const maxSize = 5 * 1024 * 1024
   if (file.size > maxSize) {
-    toast.error('El archivo excede el tamaño máximo de 5MB')
+    alert('El archivo excede el tamaño máximo de 5MB')
     return
   }
 
@@ -377,19 +382,18 @@ const uploadFile = async (file, documento) => {
   try {
     const response = await documentoService.subirDocumento(documento.id, file)
     if (response.data.success) {
-      toast.success('Documento subido exitosamente. Está en revisión.')
+      alert('Documento subido exitosamente. Está en revisión.')
       await cargarDocumentos() // Reload documents
     }
   } catch (error) {
     console.error('Error al subir documento:', error)
-    toast.error(error.response?.data?.message || 'Error al subir el documento')
+    alert(error.response?.data?.message || 'Error al subir el documento')
   } finally {
     uploadingDoc.value = null
   }
 }
 
 const verSeguimiento = async (documento) => {
-  currentDocument.value = documento
   showTimelineModal.value = true
   loadingTimeline.value = true
 
@@ -400,7 +404,7 @@ const verSeguimiento = async (documento) => {
     }
   } catch (error) {
     console.error('Error al cargar seguimiento:', error)
-    toast.error('Error al cargar el seguimiento del documento')
+    alert('Error al cargar el seguimiento del documento')
   } finally {
     loadingTimeline.value = false
   }
@@ -411,7 +415,7 @@ const getEstadoLabel = (estado) => {
     pendiente: 'Pendiente',
     enviado: 'Enviado',
     en_revision: 'En Revisión',
-    aceptado: 'Aceptado',
+    aprobado: 'Aprobado',
     rechazado: 'Rechazado'
   }
   return labels[estado] || estado
@@ -419,64 +423,636 @@ const getEstadoLabel = (estado) => {
 
 const getEstadoClass = (estado) => {
   const classes = {
-    pendiente: 'bg-gray-200 text-gray-700',
-    enviado: 'bg-blue-100 text-blue-700',
-    en_revision: 'bg-yellow-100 text-yellow-700',
-    aceptado: 'bg-green-100 text-green-700',
-    rechazado: 'bg-red-100 text-red-700'
+    pendiente: 'badge-pendiente',
+    enviado: 'badge-enviado',
+    en_revision: 'badge-revision',
+    aprobado: 'badge-aprobado',
+    rechazado: 'badge-rechazado'
   }
-  return classes[estado] || 'bg-gray-100 text-gray-700'
+  return classes[estado] || 'badge-pendiente'
 }
 
 const getTimelineColor = (estado) => {
   const colors = {
-    pendiente: 'bg-gray-400',
-    enviado: 'bg-blue-500',
-    en_revision: 'bg-yellow-500',
-    aceptado: 'bg-green-500',
-    rechazado: 'bg-red-500'
+    pendiente: 'timeline-gray',
+    enviado: 'timeline-blue',
+    en_revision: 'timeline-yellow',
+    aprobado: 'timeline-green',
+    rechazado: 'timeline-red'
   }
-  return colors[estado] || 'bg-gray-400'
-}
-
-const getAcceptTypes = (tipoArchivo) => {
-  const types = tipoArchivo.split(',').map(t => {
-    const ext = t.trim().toLowerCase()
-    if (ext === 'pdf') return '.pdf'
-    if (ext === 'jpg' || ext === 'jpeg') return '.jpg,.jpeg'
-    if (ext === 'png') return '.png'
-    return ''
-  })
-  return types.join(',')
+  return colors[estado] || 'timeline-gray'
 }
 
 const getFileUrl = (url) => {
-  // Assuming backend serves files at /uploads
   return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${url}`
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('es-PE', {
+  return new Date(dateString).toLocaleDateString('es-PE', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  }).format(date)
-}
-
-const handleBack = () => {
-  router.push('/padre/dashboard')
-}
-
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
+  })
 }
 
 onMounted(() => {
-  cargarEstudiantes()
+  cargarHijos()
 })
 </script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.selector-label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.hijo-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hijo-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Progress */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar-wrapper {
+  flex: 1;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.75rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  height: 100%;
+  transition: width 0.3s;
+  border-radius: 9999px;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.legend-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.legend-pending {
+  background: #9ca3af;
+}
+
+.legend-enviado {
+  background: #3b82f6;
+}
+
+.legend-revision {
+  background: #f59e0b;
+}
+
+.legend-aceptado {
+  background: #10b981;
+}
+
+.legend-rechazado {
+  background: #ef4444;
+}
+
+/* Documents List */
+.documentos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.documento-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.documento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.documento-content {
+  display: flex;
+  gap: 2rem;
+}
+
+.documento-info {
+  flex: 1;
+}
+
+.documento-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.documento-nombre {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.documento-desc {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0;
+}
+
+.documento-formato {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.25rem 0;
+}
+
+.estado-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-pendiente {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.badge-enviado {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-revision {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-aprobado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-rechazado {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Archivo actual */
+.archivo-actual {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.archivo-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.archivo-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.archivo-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.archivo-nombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-ver-archivo {
+  font-size: 0.875rem;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.btn-ver-archivo:hover {
+  text-decoration: underline;
+}
+
+.archivo-fecha {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.5rem 0 0 0;
+}
+
+.observaciones-rechazado {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+}
+
+.observaciones-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #991b1b;
+  margin: 0 0 0.5rem 0;
+}
+
+.observaciones-text {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+/* Upload Area */
+.upload-area {
+  width: 16rem;
+  flex-shrink: 0;
+}
+
+.upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-zone:hover,
+.upload-zone-dragover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-zone-active {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.upload-icon {
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto 0.5rem;
+  color: #9ca3af;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.upload-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.upload-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.25rem 0 0 0;
+}
+
+.upload-approved {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.approved-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.5rem;
+  color: #10b981;
+}
+
+.approved-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #10b981;
+  margin: 0;
+}
+
+.btn-seguimiento {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-seguimiento:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Empty state */
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 42rem;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #6b7280;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+}
+
+.modal-close:hover {
+  color: #111827;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 2rem;
+  padding-bottom: 1rem;
+}
+
+.timeline-item:not(.timeline-item-last)::after {
+  content: '';
+  position: absolute;
+  left: 0.4375rem;
+  top: 1.75rem;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
+
+.timeline-gray {
+  background: #9ca3af;
+}
+
+.timeline-blue {
+  background: #3b82f6;
+}
+
+.timeline-yellow {
+  background: #f59e0b;
+}
+
+.timeline-green {
+  background: #10b981;
+}
+
+.timeline-red {
+  background: #ef4444;
+}
+
+.timeline-content {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.timeline-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.timeline-date {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.timeline-comment {
+  font-size: 0.875rem;
+  color: #374151;
+  margin: 0.5rem 0;
+}
+
+.timeline-user {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .documento-content {
+    flex-direction: column;
+  }
+
+  .upload-area {
+    width: 100%;
+  }
+
+  .legend-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
