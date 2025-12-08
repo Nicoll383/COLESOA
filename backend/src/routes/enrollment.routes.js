@@ -7,6 +7,9 @@ const { secretariaOrAdmin, adminOnly } = require('../middlewares/role.middleware
 // Todas las rutas requieren autenticación
 router.use(verifyToken);
 
+// Validar si estudiante puede matricularse en un grado
+router.get('/validar-grado/:estudianteId/:gradoId', EnrollmentController.validarGrado);
+
 // Consultar secciones con vacantes
 router.get('/secciones-vacantes', EnrollmentController.getSeccionesConVacantes);
 

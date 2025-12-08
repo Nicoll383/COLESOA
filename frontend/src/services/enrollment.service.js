@@ -51,6 +51,11 @@ export default {
     })
   },
 
+  // Validar si estudiante puede matricularse en un grado
+  validarGrado(estudianteId, gradoId) {
+    return api.get(`/enrollments/validar-grado/${estudianteId}/${gradoId}`)
+  },
+
   // Descargar contrato en PDF
   descargarContrato(id) {
     return api.get(`/enrollments/${id}/contrato`, {

@@ -575,9 +575,33 @@ const selectStudent = (student) => {
   selectedStudent.value = student
 }
 
-const selectGrado = (gradoNombre) => {
+const selectGrado = async (gradoNombre) => {
   selectedGrado.value = gradoNombre
   selectedSeccion.value = null // Reset section when changing grade
+
+  // Validar si el estudiante puede matricularse en este grado
+  if (selectedStudent.value) {
+    const grado = gradosDisponibles.value.find(g => g.nombre === gradoNombre)
+    if (grado) {
+      try {
+        const response = await enrollmentService.validarGrado(selectedStudent.value.id, grado.grado_id)
+        const validation = response.data.data
+
+        if (!validation.valido) {
+          // Mostrar advertencia pero permitir continuar
+          if (confirm(`ADVERTENCIA: ${validation.mensaje}\n\n¿Desea continuar de todas formas?`)) {
+            // Usuario confirmó, continuar
+          } else {
+            // Usuario canceló, deshacer selección
+            selectedGrado.value = null
+          }
+        }
+      } catch (error) {
+        console.error('Error al validar grado:', error)
+        // Continuar sin validación en caso de error
+      }
+    }
+  }
 }
 
 const selectSeccion = (seccion) => {

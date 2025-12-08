@@ -544,6 +544,27 @@ class EnrollmentController {
       }
     }
   }
+
+  // Validar si un estudiante puede matricularse en un grado específico
+  static async validarGrado(req, res) {
+    try {
+      const { estudianteId, gradoId } = req.params;
+
+      const validation = await Student.validarGradoMatricula(estudianteId, gradoId);
+
+      res.json({
+        success: true,
+        data: validation
+      });
+    } catch (error) {
+      console.error('Error al validar grado:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al validar grado',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = EnrollmentController;
