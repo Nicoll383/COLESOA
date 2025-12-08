@@ -245,6 +245,100 @@ class UserController {
       });
     }
   }
+
+  // Obtener permisos de un usuario
+  static async getPermisos(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Verificar que el usuario existe
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      const permisos = await User.getPermisos(id);
+
+      res.json({
+        success: true,
+        data: {
+          usuario_id: id,
+          rol: user.rol,
+          permisos: permisos
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener permisos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener permisos',
+        error: error.message
+      });
+    }
+  }
+
+  // Actualizar permisos de un usuario
+  static async updatePermisos(req, res) {
+    try {
+      const { id } = req.params;
+      const { permisos } = req.body;
+
+      // Verificar que el usuario existe
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // No permitir modificar permisos del administrador principal
+      if (user.email === 'admin@colegiosoa.edu.pe') {
+        return res.status(403).json({
+          success: false,
+          message: 'No se pueden modificar los permisos del administrador principal'
+        });
+      }
+
+      // Validar estructura de permisos
+      if (!permisos || typeof permisos !== 'object') {
+        return res.status(400).json({
+          success: false,
+          message: 'Los permisos deben ser un objeto válido'
+        });
+      }
+
+      const updated = await User.updatePermisos(id, permisos);
+
+      if (!updated) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudieron actualizar los permisos'
+        });
+      }
+
+      const updatedPermisos = await User.getPermisos(id);
+
+      res.json({
+        success: true,
+        message: 'Permisos actualizados exitosamente',
+        data: {
+          usuario_id: id,
+          permisos: updatedPermisos
+        }
+      });
+    } catch (error) {
+      console.error('Error al actualizar permisos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al actualizar permisos',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = UserController;

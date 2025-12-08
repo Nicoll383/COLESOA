@@ -113,6 +113,92 @@ class User {
   }
 
   /**
+   * Obtener permisos de un usuario
+   */
+  static async getPermisos(id) {
+    const pool = getPool();
+    const [rows] = await pool.execute(
+      'SELECT permisos FROM usuarios WHERE id = ?',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    // Si no tiene permisos definidos, retornar permisos por defecto según rol
+    if (!rows[0].permisos) {
+      const user = await this.findById(id);
+      return this.getDefaultPermisosByRole(user.rol);
+    }
+
+    return rows[0].permisos;
+  }
+
+  /**
+   * Actualizar permisos de un usuario
+   */
+  static async updatePermisos(id, permisos) {
+    const pool = getPool();
+    const [result] = await pool.execute(
+      'UPDATE usuarios SET permisos = ?, ultima_modificacion_permisos = NOW() WHERE id = ?',
+      [JSON.stringify(permisos), id]
+    );
+
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Obtener permisos por defecto según rol
+   */
+  static getDefaultPermisosByRole(rol) {
+    const defaultPermisos = {
+      administrador: {
+        estudiantes: { ver: true, crear: true, editar: true, eliminar: true },
+        matriculas: { ver: true, crear: true, editar: true, eliminar: true },
+        pagos: { ver: true, crear: true, editar: true, eliminar: true },
+        documentos: { ver: true, aprobar: true, rechazar: true },
+        reportes: { ver: true, exportar: true },
+        usuarios: { ver: true, crear: true, editar: true, eliminar: true }
+      },
+      secretaria: {
+        estudiantes: { ver: true, crear: true, editar: true, eliminar: false },
+        matriculas: { ver: true, crear: true, editar: true, eliminar: false },
+        pagos: { ver: true, crear: false, editar: false, eliminar: false },
+        documentos: { ver: true, aprobar: true, rechazar: true },
+        reportes: { ver: true, exportar: false },
+        usuarios: { ver: true, crear: false, editar: false, eliminar: false }
+      },
+      finanzas: {
+        estudiantes: { ver: true, crear: false, editar: false, eliminar: false },
+        matriculas: { ver: true, crear: false, editar: false, eliminar: false },
+        pagos: { ver: true, crear: true, editar: true, eliminar: true },
+        documentos: { ver: false, aprobar: false, rechazar: false },
+        reportes: { ver: true, exportar: true },
+        usuarios: { ver: false, crear: false, editar: false, eliminar: false }
+      },
+      docente: {
+        estudiantes: { ver: true, crear: false, editar: false, eliminar: false },
+        matriculas: { ver: true, crear: false, editar: false, eliminar: false },
+        pagos: { ver: false, crear: false, editar: false, eliminar: false },
+        documentos: { ver: false, aprobar: false, rechazar: false },
+        reportes: { ver: true, exportar: false },
+        usuarios: { ver: false, crear: false, editar: false, eliminar: false }
+      },
+      padre: {
+        estudiantes: { ver: true, crear: false, editar: false, eliminar: false },
+        matriculas: { ver: true, crear: false, editar: false, eliminar: false },
+        pagos: { ver: true, crear: false, editar: false, eliminar: false },
+        documentos: { ver: true, aprobar: false, rechazar: false },
+        reportes: { ver: false, exportar: false },
+        usuarios: { ver: false, crear: false, editar: false, eliminar: false }
+      }
+    };
+
+    return defaultPermisos[rol] || {};
+  }
+
+  /**
    * Verificar contraseña
    */
   static async verifyPassword(plainPassword, hashedPassword) {

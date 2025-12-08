@@ -16,4 +16,8 @@ router.put('/:id', authorize(['administrador']), UserController.update);
 router.patch('/:id/estado', authorize(['administrador']), UserController.toggleEstado);
 router.patch('/:id/password', authorize(['administrador']), UserController.changePassword);
 
+// Gestión de permisos (solo administrador)
+router.get('/:id/permisos', authorize(['administrador']), UserController.getPermisos);
+router.put('/:id/permisos', authorize(['administrador']), UserController.updatePermisos);
+
 module.exports = router;
