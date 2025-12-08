@@ -29,7 +29,8 @@
         <div class="status-banner" :class="`status-${enrollment.estado}`">
           <div class="status-icon">
             <span v-if="enrollment.estado === 'pendiente'">⏳</span>
-            <span v-else-if="enrollment.estado === 'pagada'">✓</span>
+            <span v-else-if="enrollment.estado === 'confirmada'">✓</span>
+            <span v-else-if="enrollment.estado === 'pagada'">✓✓</span>
             <span v-else-if="enrollment.estado === 'cancelada'">⊗</span>
             <span v-else-if="enrollment.estado === 'anulada'">✗</span>
           </div>
@@ -52,6 +53,20 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons">
+          <button
+            v-if="enrollment.estado === 'pendiente' && canUpdateEstado"
+            @click="confirmarMatricula"
+            :disabled="confirmando"
+            class="action-btn action-btn-warning"
+          >
+            <span class="action-icon">✓</span>
+            <div class="action-content">
+              <span class="action-title">
+                {{ confirmando ? 'Confirmando...' : 'Confirmar Matrícula' }}
+              </span>
+              <span class="action-subtitle">Inicializar documentos y enviar credenciales</span>
+            </div>
+          </button>
           <button @click="downloadContrato" :disabled="downloadingContrato" class="action-btn action-btn-primary">
             <span class="action-icon">📄</span>
             <div class="action-content">
@@ -263,6 +278,7 @@ const error = ref(null)
 
 const downloadingContrato = ref(false)
 const downloadingComprobante = ref(false)
+const confirmando = ref(false)
 
 const showEstadoModal = ref(false)
 const nuevoEstado = ref('')
@@ -322,6 +338,24 @@ const downloadComprobante = async () => {
   }
 }
 
+const confirmarMatricula = async () => {
+  if (!confirm('¿Está seguro de confirmar esta matrícula? Esto inicializará los documentos requeridos y enviará las credenciales de acceso al apoderado.')) {
+    return
+  }
+
+  confirmando.value = true
+  try {
+    const response = await enrollmentService.confirmar(route.params.id)
+    alert(response.data.message || 'Matrícula confirmada exitosamente')
+    await loadEnrollment()
+  } catch (err) {
+    console.error('Error al confirmar matrícula:', err)
+    alert(err.response?.data?.message || 'Error al confirmar matrícula')
+  } finally {
+    confirmando.value = false
+  }
+}
+
 const updateEstado = async () => {
   updating.value = true
   updateError.value = null
@@ -346,6 +380,7 @@ const goBack = () => {
 const getEstadoLabel = (estado) => {
   const labels = {
     pendiente: 'Pendiente de Pago',
+    confirmada: 'Confirmada',
     pagada: 'Pagada',
     cancelada: 'Cancelada',
     anulada: 'Anulada'
@@ -420,6 +455,11 @@ onMounted(() => {
 .status-pendiente {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   border: 2px solid #fbbf24;
+}
+
+.status-confirmada {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  border: 2px solid #3b82f6;
 }
 
 .status-pagada {
@@ -498,6 +538,11 @@ onMounted(() => {
 
 .action-btn-success {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.action-btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
 }
 

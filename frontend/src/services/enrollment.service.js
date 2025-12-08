@@ -29,6 +29,11 @@ export default {
     return api.post(`/enrollments/${id}/anular`, { motivo })
   },
 
+  // Confirmar matrícula (inicializar documentos y enviar credenciales)
+  confirmar(id) {
+    return api.post(`/enrollments/${id}/confirmar`)
+  },
+
   // Obtener secciones con vacantes
   getSeccionesConVacantes(añoEscolar) {
     return api.get('/enrollments/secciones-vacantes', {

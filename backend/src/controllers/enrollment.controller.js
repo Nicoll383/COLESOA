@@ -1,5 +1,9 @@
 const Enrollment = require('../models/Enrollment');
 const Student = require('../models/Student');
+const Documento = require('../models/Documento');
+const User = require('../models/User');
+const emailService = require('../services/email.service');
+const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -40,6 +44,131 @@ class EnrollmentController {
       res.status(500).json({
         success: false,
         message: 'Error al crear matrícula',
+        error: error.message
+      });
+    }
+  }
+
+  // Confirmar matrícula (inicializar documentos y enviar credenciales)
+  static async confirmarMatricula(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Obtener información de la matrícula y el estudiante
+      const enrollment = await Enrollment.findById(id);
+
+      if (!enrollment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Matrícula no encontrada'
+        });
+      }
+
+      const student = await Student.findById(enrollment.estudiante_id);
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Estudiante no encontrado'
+        });
+      }
+
+      // 2. Inicializar documentos requeridos
+      await Documento.inicializarDocumentos(enrollment.estudiante_id, enrollment.id);
+
+      // 3. Crear/obtener usuario padre
+      let padreUser = await User.findByEmail(student.apoderado_email);
+      let padrePassword = null;
+
+      if (!padreUser) {
+        // Crear usuario padre
+        padrePassword = emailService.constructor.generarPassword();
+        const padreUsuario = emailService.constructor.generarUsuario(
+          student.apoderado_nombre,
+          student.apoderado_apellido,
+          student.apoderado_dni
+        );
+
+        const hashedPassword = await bcrypt.hash(padrePassword, 10);
+
+        padreUser = await User.create({
+          nombre: student.apoderado_nombre,
+          apellido: student.apoderado_apellido,
+          email: student.apoderado_email,
+          username: padreUsuario,
+          password: hashedPassword,
+          rol: 'padre',
+          dni: student.apoderado_dni,
+          telefono: student.apoderado_telefono,
+          estado: 'activo'
+        });
+      }
+
+      // 4. Crear/obtener usuario estudiante
+      let estudianteUser = await User.findByEmail(student.email || `${student.dni}@estudiante.colesoa.edu.pe`);
+      let estudiantePassword = null;
+
+      if (!estudianteUser) {
+        // Crear usuario estudiante
+        estudiantePassword = emailService.constructor.generarPassword();
+        const estudianteUsuario = emailService.constructor.generarUsuario(
+          student.nombre,
+          student.apellido,
+          student.dni
+        );
+
+        const hashedPassword = await bcrypt.hash(estudiantePassword, 10);
+
+        estudianteUser = await User.create({
+          nombre: student.nombre,
+          apellido: student.apellido,
+          email: student.email || `${student.dni}@estudiante.colesoa.edu.pe`,
+          username: estudianteUsuario,
+          password: hashedPassword,
+          rol: 'estudiante',
+          dni: student.dni,
+          estado: 'activo'
+        });
+      }
+
+      // 5. Enviar email con credenciales (solo si son nuevas cuentas)
+      if (padrePassword && estudiantePassword) {
+        try {
+          await emailService.enviarCredencialesMatricula({
+            padreEmail: student.apoderado_email,
+            padreNombre: student.apoderado_nombre,
+            padreApellido: student.apoderado_apellido,
+            padreUsuario: padreUser.username,
+            padrePassword: padrePassword,
+            estudianteNombre: student.nombre,
+            estudianteApellido: student.apellido,
+            estudianteUsuario: estudianteUser.username,
+            estudiantePassword: estudiantePassword,
+            codigoMatricula: enrollment.codigo_matricula
+          });
+        } catch (emailError) {
+          console.error('Error al enviar email:', emailError);
+          // No falla la operación si el email falla
+        }
+      }
+
+      // 6. Actualizar estado de la matrícula a 'confirmada' o 'activa'
+      await Enrollment.updateEstado(id, 'confirmada', 'Matrícula confirmada con documentos inicializados');
+
+      res.json({
+        success: true,
+        message: 'Matrícula confirmada exitosamente. Se han inicializado los documentos requeridos y enviado las credenciales.',
+        data: {
+          enrollment: enrollment,
+          documentosInicializados: true,
+          credencialesEnviadas: !!(padrePassword && estudiantePassword)
+        }
+      });
+    } catch (error) {
+      console.error('Error al confirmar matrícula:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al confirmar matrícula',
         error: error.message
       });
     }

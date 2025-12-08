@@ -25,6 +25,9 @@ router.post('/', secretariaOrAdmin, EnrollmentController.create);
 // Actualizar estado de matrícula
 router.patch('/:id/estado', secretariaOrAdmin, EnrollmentController.updateEstado);
 
+// Confirmar matrícula (inicializa documentos y envía credenciales)
+router.post('/:id/confirmar', secretariaOrAdmin, EnrollmentController.confirmarMatricula);
+
 // Anular matrícula
 router.post('/:id/anular', adminOnly, EnrollmentController.anular);
 
