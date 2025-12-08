@@ -54,6 +54,7 @@ app.use('/api/secciones', require('./routes/seccion.routes'));
 app.use('/api/cursos', require('./routes/curso.routes'));
 app.use('/api/reports', require('./routes/report.routes'));
 app.use('/api/school-year-config', require('./routes/año-escolar.routes'));
+app.use('/api/padre', require('./routes/padre.routes'));
 
 // Error handler
 app.use((err, req, res, next) => {

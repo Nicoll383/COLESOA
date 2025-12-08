@@ -89,19 +89,19 @@
 
             <!-- Acciones Rápidas -->
             <div class="hijo-actions">
-              <button class="action-button action-primary">
+              <button @click="verCuotas(hijo.id)" class="action-button action-primary">
                 <span class="action-icon">💳</span>
                 <span>Ver Cuotas</span>
               </button>
-              <button class="action-button action-secondary">
+              <button @click="verDocumentos(hijo.id)" class="action-button action-secondary">
                 <span class="action-icon">📄</span>
                 <span>Documentos</span>
               </button>
-              <button class="action-button action-info">
+              <button @click="verAsistencia(hijo.id)" class="action-button action-info">
                 <span class="action-icon">📊</span>
                 <span>Asistencia</span>
               </button>
-              <button class="action-button action-success">
+              <button @click="verNotas(hijo.id)" class="action-button action-success">
                 <span class="action-icon">📝</span>
                 <span>Notas</span>
               </button>
@@ -139,6 +139,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/AppLayout.vue'
+import api from '@/services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -172,36 +173,31 @@ const loadHijos = async () => {
   error.value = null
 
   try {
-    // TODO: Implementar endpoint para obtener hijos del padre
-    // const response = await api.get('/padre/hijos')
-    // hijos.value = response.data.data
-
-    // Datos de prueba
-    setTimeout(() => {
-      hijos.value = [
-        {
-          id: 1,
-          nombres: 'Juan Pedro',
-          apellidos: 'García López',
-          dni: '12345678',
-          grado_nombre: 'Tercer Grado',
-          seccion_nombre: 'A',
-          estado_matricula: 'confirmada',
-          cuotas_pendientes: 3,
-          monto_pendiente: 1050.00,
-          documentos_pendientes: 2,
-          documentos_totales: 7,
-          asistencias: 95,
-          dias_asistidos: 19,
-          dias_habiles: 20
-        }
-      ]
-      loading.value = false
-    }, 500)
+    const response = await api.get('/padre/hijos')
+    hijos.value = response.data.data
+    loading.value = false
   } catch (err) {
     error.value = err.response?.data?.message || 'Error al cargar información'
     loading.value = false
   }
+}
+
+const verCuotas = (hijoId) => {
+  router.push({ name: 'PadreCuotasEstudiante', params: { estudianteId: hijoId } })
+}
+
+const verDocumentos = (hijoId) => {
+  router.push({ name: 'PadreDocumentos', query: { estudiante: hijoId } })
+}
+
+const verAsistencia = (hijoId) => {
+  // TODO: Implementar vista de asistencia
+  alert('Vista de asistencia en desarrollo')
+}
+
+const verNotas = (hijoId) => {
+  // TODO: Implementar vista de notas
+  alert('Vista de notas en desarrollo')
 }
 
 onMounted(() => {

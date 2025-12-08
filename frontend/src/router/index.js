@@ -56,6 +56,18 @@ const routes = [
     meta: { requiresAuth: true, roles: ['padre'] }
   },
   {
+    path: '/padre/cuotas',
+    name: 'PadreCuotas',
+    component: () => import('@/views/padre/CuotasView.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
+    path: '/padre/cuotas/:estudianteId',
+    name: 'PadreCuotasEstudiante',
+    component: () => import('@/views/padre/CuotasView.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
     path: '/padre/documentos',
     name: 'PadreDocumentos',
     component: () => import('@/views/padre/DocumentosUpload.vue'),
