@@ -2,6 +2,7 @@ const Enrollment = require('../models/Enrollment');
 const Student = require('../models/Student');
 const Documento = require('../models/Documento');
 const User = require('../models/User');
+const Payment = require('../models/Payment');
 const emailService = require('../services/email.service');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
@@ -152,15 +153,20 @@ class EnrollmentController {
         }
       }
 
-      // 6. Actualizar estado de la matrícula a 'confirmada' o 'activa'
-      await Enrollment.updateEstado(id, 'confirmada', 'Matrícula confirmada con documentos inicializados');
+      // 6. Crear cuotas mensuales automáticamente
+      const cuotas = await Payment.crearCuotasMensuales(enrollment.id, enrollment.año_escolar, 350.00);
+
+      // 7. Actualizar estado de la matrícula a 'confirmada'
+      await Enrollment.updateEstado(id, 'confirmada', 'Matrícula confirmada con documentos y cuotas inicializados');
 
       res.json({
         success: true,
-        message: 'Matrícula confirmada exitosamente. Se han inicializado los documentos requeridos y enviado las credenciales.',
+        message: 'Matrícula confirmada exitosamente. Se han inicializado los documentos, creado las cuotas mensuales y enviado las credenciales.',
         data: {
           enrollment: enrollment,
           documentosInicializados: true,
+          cuotasCreadas: cuotas.length,
+          cuotas: cuotas,
           credencialesEnviadas: !!(padrePassword && estudiantePassword)
         }
       });

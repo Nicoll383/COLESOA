@@ -127,6 +127,131 @@ class Payment {
 
     return parseFloat(rows[0].total);
   }
+
+  // Crear cuotas mensuales para una matrícula
+  static async crearCuotasMensuales(matriculaId, añoEscolar, montoPension = 350.00) {
+    const pool = getPool();
+    const cuotas = [];
+
+    // Año escolar peruano: Marzo a Diciembre (10 meses)
+    const mesesEscolar = [
+      { mes: 3, nombre: 'Marzo' },
+      { mes: 4, nombre: 'Abril' },
+      { mes: 5, nombre: 'Mayo' },
+      { mes: 6, nombre: 'Junio' },
+      { mes: 7, nombre: 'Julio' },
+      { mes: 8, nombre: 'Agosto' },
+      { mes: 9, nombre: 'Septiembre' },
+      { mes: 10, nombre: 'Octubre' },
+      { mes: 11, nombre: 'Noviembre' },
+      { mes: 12, nombre: 'Diciembre' }
+    ];
+
+    // Generar código base para las cuotas
+    const timestamp = Date.now().toString().slice(-6);
+
+    for (let i = 0; i < mesesEscolar.length; i++) {
+      const { mes, nombre } = mesesEscolar[i];
+      const codigoPago = `CUOTA-${añoEscolar}-${mes.toString().padStart(2, '0')}-${timestamp}${i}`;
+
+      // Fecha de vencimiento: día 10 de cada mes
+      const fechaVencimiento = `${añoEscolar}-${mes.toString().padStart(2, '0')}-10`;
+
+      const [result] = await pool.execute(
+        `INSERT INTO pagos (
+          codigo_pago, matricula_id, tipo_pago, mes, año, concepto,
+          monto, fecha_vencimiento, metodo_pago, estado, created_at
+        ) VALUES (?, ?, 'pensión', ?, ?, ?, ?, ?, 'efectivo', 'pendiente', NOW())`,
+        [
+          codigoPago,
+          matriculaId,
+          mes,
+          añoEscolar,
+          `Pensión ${nombre} ${añoEscolar}`,
+          montoPension,
+          fechaVencimiento
+        ]
+      );
+
+      cuotas.push({
+        id: result.insertId,
+        codigo: codigoPago,
+        mes,
+        nombre_mes: nombre,
+        monto: montoPension,
+        fecha_vencimiento: fechaVencimiento
+      });
+    }
+
+    return cuotas;
+  }
+
+  // Obtener cuotas de una matrícula
+  static async getCuotasByMatricula(matriculaId) {
+    const pool = getPool();
+
+    const [rows] = await pool.execute(
+      `SELECT p.*,
+        CASE
+          WHEN p.mes = 3 THEN 'Marzo'
+          WHEN p.mes = 4 THEN 'Abril'
+          WHEN p.mes = 5 THEN 'Mayo'
+          WHEN p.mes = 6 THEN 'Junio'
+          WHEN p.mes = 7 THEN 'Julio'
+          WHEN p.mes = 8 THEN 'Agosto'
+          WHEN p.mes = 9 THEN 'Septiembre'
+          WHEN p.mes = 10 THEN 'Octubre'
+          WHEN p.mes = 11 THEN 'Noviembre'
+          WHEN p.mes = 12 THEN 'Diciembre'
+        END as nombre_mes
+       FROM pagos p
+       WHERE p.matricula_id = ? AND p.tipo_pago = 'pensión'
+       ORDER BY p.año, p.mes`,
+      [matriculaId]
+    );
+
+    return rows;
+  }
+
+  // Pagar una cuota
+  static async pagarCuota(id, metodoPago, numeroOperacion = null, observaciones = null) {
+    const pool = getPool();
+
+    const [result] = await pool.execute(
+      `UPDATE pagos
+       SET estado = 'completado',
+           metodo_pago = ?,
+           numero_operacion = ?,
+           observaciones = COALESCE(?, observaciones),
+           fecha_pago = NOW(),
+           updated_at = NOW()
+       WHERE id = ? AND estado = 'pendiente'`,
+      [metodoPago, numeroOperacion, observaciones, id]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error('Cuota no encontrada o ya fue pagada');
+    }
+
+    return await this.findById(id);
+  }
+
+  // Marcar cuotas vencidas
+  static async marcarCuotasVencidas() {
+    const pool = getPool();
+    const hoy = new Date().toISOString().split('T')[0];
+
+    const [result] = await pool.execute(
+      `UPDATE pagos
+       SET estado = 'vencido'
+       WHERE estado = 'pendiente'
+       AND fecha_vencimiento < ?
+       AND tipo_pago = 'pensión'`,
+      [hoy]
+    );
+
+    return result.affectedRows;
+  }
 }
 
 module.exports = Payment;
