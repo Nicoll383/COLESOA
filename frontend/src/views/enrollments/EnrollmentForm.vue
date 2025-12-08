@@ -331,6 +331,28 @@
               <p class="financial-note">
                 * El pago de matrícula debe realizarse para confirmar la inscripción
               </p>
+
+              <!-- Método de Pago -->
+              <div class="payment-method-section">
+                <h4 class="payment-title">Método de Pago</h4>
+                <div class="payment-methods-grid">
+                  <label
+                    v-for="method in paymentMethods"
+                    :key="method.value"
+                    class="payment-method-card"
+                    :class="{ 'payment-method-selected': metodoPago === method.value }"
+                  >
+                    <input
+                      type="radio"
+                      v-model="metodoPago"
+                      :value="method.value"
+                      class="payment-radio"
+                    />
+                    <div class="payment-icon">{{ method.icon }}</div>
+                    <div class="payment-name">{{ method.label }}</div>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -351,8 +373,81 @@
           </div>
         </div>
 
-        <!-- Step 4: Confirmación -->
+        <!-- Step 4: Subir Documentos (Opcional) -->
         <div v-if="currentStep === 4" class="step-content">
+          <h2 class="step-title">
+            <span class="step-icon">📄</span>
+            Documentos del Estudiante
+          </h2>
+          <p class="step-description">
+            Suba los documentos requeridos. Puede hacerlo ahora o posteriormente desde su portal.
+            <strong>Este paso es opcional y no bloquea la matrícula.</strong>
+          </p>
+
+          <div class="documents-container">
+            <div
+              v-for="doc in documentosRequeridos"
+              :key="doc.id"
+              class="document-card"
+              :class="{ 'document-uploaded': doc.subido }"
+            >
+              <div class="document-info">
+                <div class="document-header">
+                  <h4 class="document-name">{{ doc.nombre }}</h4>
+                  <span class="document-badge" :class="{
+                    'badge-required': doc.obligatorio && !doc.subido,
+                    'badge-optional': !doc.obligatorio && !doc.subido,
+                    'badge-success': doc.subido
+                  }">
+                    {{ doc.subido ? '✓ Subido' : (doc.obligatorio ? 'Obligatorio' : 'Opcional') }}
+                  </span>
+                </div>
+                <div v-if="doc.subido" class="document-file">
+                  <span class="file-icon">📎</span>
+                  <span class="file-name">{{ doc.archivo }}</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <label :for="`file-${doc.id}`" class="upload-button" :class="{ 'upload-disabled': doc.subido }">
+                  <input
+                    :id="`file-${doc.id}`"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    @change="handleDocumentUpload(doc.id, $event)"
+                    class="file-input-hidden"
+                    :disabled="doc.subido"
+                  />
+                  <span v-if="!doc.subido">📎 Seleccionar Archivo</span>
+                  <span v-else>✓ Subido</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="documents-note">
+            <div class="note-icon">ℹ️</div>
+            <div>
+              <p class="note-title">Nota Importante</p>
+              <p class="note-text">
+                Los documentos no subidos ahora pueden ser enviados posteriormente desde el portal de padres.
+                La matrícula se creará independientemente de si sube los documentos en este momento.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button @click="prevStep" class="btn btn-outline">← Atrás</button>
+            <button @click="skipDocuments" class="btn btn-outline">
+              Omitir Documentos
+            </button>
+            <button @click="continueToConfirmation" class="btn btn-success">
+              Continuar →
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 5: Confirmación -->
+        <div v-if="currentStep === 5" class="step-content">
           <div class="success-container">
             <div class="success-icon">✓</div>
             <h2 class="success-title">¡Matrícula Creada Exitosamente!</h2>
@@ -395,7 +490,7 @@ import AppLayout from '@/components/AppLayout.vue'
 
 const router = useRouter()
 
-const steps = ['Seleccionar Estudiante', 'Seleccionar Grado/Sección', 'Revisar y Confirmar', 'Confirmación']
+const steps = ['Seleccionar Estudiante', 'Grado/Sección', 'Confirmar y Pagar', 'Documentos', 'Finalizar']
 const currentStep = ref(1)
 const añoEscolar = ref(2025)
 
@@ -413,12 +508,18 @@ const secciones = ref([])
 const selectedGrado = ref(null)
 const selectedSeccion = ref(null)
 
-// Step 3: Create Enrollment
+// Step 3: Payment Method & Create Enrollment
 const creating = ref(false)
 const createError = ref(null)
 const montoMatricula = ref(500.00)
+const metodoPago = ref('efectivo')
 
-// Step 4: Success
+// Step 4: Upload Documents (Optional)
+const documentosRequeridos = ref([])
+const documentosSubidos = ref([])
+const uploadingDocs = ref(false)
+
+// Step 5: Success
 const createdEnrollment = ref(null)
 
 // Computed
@@ -509,12 +610,17 @@ const createEnrollment = async () => {
       estudiante_id: selectedStudent.value.id,
       seccion_id: selectedSeccion.value.id,
       año_escolar: añoEscolar.value,
-      monto_total: montoMatricula.value
+      monto_total: montoMatricula.value,
+      metodo_pago: metodoPago.value
     }
 
     const response = await enrollmentService.create(enrollmentData)
     createdEnrollment.value = response.data.data
-    currentStep.value = 4
+
+    // Cargar documentos requeridos para el paso 4
+    await loadDocumentosRequeridos()
+
+    currentStep.value = 4 // Ir al paso de documentos
   } catch (error) {
     createError.value = error.response?.data?.message || 'Error al crear matrícula'
     console.error('Error:', error)
@@ -553,6 +659,77 @@ const createAnother = () => {
   createdEnrollment.value = null
   searchError.value = null
   createError.value = null
+}
+
+// Métodos de pago disponibles
+const paymentMethods = [
+  { value: 'efectivo', label: 'Efectivo', icon: '💵' },
+  { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+  { value: 'transferencia', label: 'Transferencia', icon: '🏦' },
+  { value: 'deposito', label: 'Depósito', icon: '🏧' },
+  { value: 'yape', label: 'Yape', icon: '📱' },
+  { value: 'plin', label: 'Plin', icon: '💸' }
+]
+
+// Cargar documentos requeridos
+const loadDocumentosRequeridos = async () => {
+  try {
+    const response = await enrollmentService.getDocumentosRequeridos()
+    documentosRequeridos.value = response.data.data || [
+      { id: 'dni', nombre: 'DNI o Partida de Nacimiento', obligatorio: true, subido: false },
+      { id: 'certificado', nombre: 'Certificado de Estudios', obligatorio: true, subido: false },
+      { id: 'foto', nombre: 'Foto tamaño carné', obligatorio: false, subido: false },
+      { id: 'ficha', nombre: 'Ficha de Matrícula (firmada)', obligatorio: true, subido: false }
+    ]
+  } catch (error) {
+    console.error('Error al cargar documentos:', error)
+    // Usar lista por defecto en caso de error
+    documentosRequeridos.value = [
+      { id: 'dni', nombre: 'DNI o Partida de Nacimiento', obligatorio: true, subido: false },
+      { id: 'certificado', nombre: 'Certificado de Estudios', obligatorio: true, subido: false },
+      { id: 'foto', nombre: 'Foto tamaño carné', obligatorio: false, subido: false },
+      { id: 'ficha', nombre: 'Ficha de Matrícula (firmada)', obligatorio: true, subido: false }
+    ]
+  }
+}
+
+// Subir documento
+const handleDocumentUpload = async (documentoId, event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validación de tamaño (5MB máximo)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('El archivo excede el tamaño máximo de 5MB')
+    return
+  }
+
+  uploadingDocs.value = true
+
+  try {
+    // Aquí iría la lógica de subida al servidor
+    // Por ahora solo marcamos como subido
+    const docIndex = documentosRequeridos.value.findIndex(d => d.id === documentoId)
+    if (docIndex !== -1) {
+      documentosRequeridos.value[docIndex].subido = true
+      documentosRequeridos.value[docIndex].archivo = file.name
+    }
+  } catch (error) {
+    console.error('Error al subir documento:', error)
+    alert('Error al subir el documento')
+  } finally {
+    uploadingDocs.value = false
+  }
+}
+
+// Saltar paso de documentos (opcional)
+const skipDocuments = () => {
+  currentStep.value = 5 // Ir a confirmación
+}
+
+// Continuar al paso de confirmación
+const continueToConfirmation = () => {
+  currentStep.value = 5
 }
 
 const formatDate = (date) => {
@@ -1373,6 +1550,256 @@ onMounted(() => {
   border-color: #9ca3af;
 }
 
+/* Payment Methods */
+.payment-method-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.payment-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.payment-method-card {
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.payment-method-card:hover {
+  border-color: #667eea;
+  background: #f9fafb;
+  transform: translateY(-2px);
+}
+
+.payment-method-selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+}
+
+.payment-radio {
+  display: none;
+}
+
+.payment-icon {
+  font-size: 2rem;
+}
+
+.payment-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Documents Section */
+.documents-container {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.document-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.document-uploaded {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+}
+
+.document-info {
+  flex: 1;
+}
+
+.document-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.document-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.document-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-required {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-optional {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.badge-success {
+  background: #10b981;
+  color: white;
+}
+
+.document-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.file-icon {
+  font-size: 1.25rem;
+}
+
+.file-name {
+  font-weight: 500;
+}
+
+.document-upload {
+  margin-left: 1rem;
+}
+
+.upload-button {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.upload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.upload-disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.upload-disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.documents-note {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #dbeafe;
+  border: 2px solid #3b82f6;
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.note-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.note-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 0.5rem 0;
+}
+
+.note-text {
+  font-size: 0.875rem;
+  color: #1e3a8a;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.text-success {
+  color: #10b981;
+}
+
+.text-warning {
+  color: #f59e0b;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .stepper {
@@ -1412,6 +1839,20 @@ onMounted(() => {
 
   .success-actions {
     flex-direction: column;
+  }
+
+  .payment-methods-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .document-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .document-upload {
+    margin-left: 0;
   }
 }
 </style>
