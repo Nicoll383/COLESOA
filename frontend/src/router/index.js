@@ -44,9 +44,63 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
   },
   {
+    path: '/finanzas/registrar-pago',
+    name: 'FinanzasRegistrarPago',
+    component: () => import('@/views/finanzas/RegistrarPago.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
+  },
+  {
+    path: '/finanzas/deudas',
+    name: 'FinanzasDeudas',
+    component: () => import('@/views/finanzas/DeudasPendientes.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
+  },
+  {
+    path: '/finanzas/historial',
+    name: 'FinanzasHistorial',
+    component: () => import('@/views/finanzas/HistorialPagos.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
+  },
+  {
+    path: '/finanzas/reportes',
+    name: 'FinanzasReportes',
+    component: () => import('@/views/finanzas/ReportesFinancieros.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
+  },
+  {
     path: '/docente',
     name: 'DocenteDashboard',
     component: () => import('@/views/docente/DocenteDashboard.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/docente/horario',
+    name: 'DocenteHorario',
+    component: () => import('@/views/docente/HorarioView.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/docente/estudiantes',
+    name: 'DocenteEstudiantes',
+    component: () => import('@/views/docente/EstudiantesView.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/docente/notas',
+    name: 'DocenteNotas',
+    component: () => import('@/views/docente/RegistrarNotas.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/docente/asistencia',
+    name: 'DocenteAsistencia',
+    component: () => import('@/views/docente/RegistrarAsistencia.vue'),
+    meta: { requiresAuth: true, roles: ['docente'] }
+  },
+  {
+    path: '/docente/reportes',
+    name: 'DocenteReportes',
+    component: () => import('@/views/docente/ReportesView.vue'),
     meta: { requiresAuth: true, roles: ['docente'] }
   },
   {
@@ -68,9 +122,21 @@ const routes = [
     meta: { requiresAuth: true, roles: ['padre'] }
   },
   {
+    path: '/padre/hijos',
+    name: 'PadreHijos',
+    component: () => import('@/views/padre/HijosView.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
     path: '/padre/documentos',
     name: 'PadreDocumentos',
     component: () => import('@/views/padre/DocumentosUpload.vue'),
+    meta: { requiresAuth: true, roles: ['padre'] }
+  },
+  {
+    path: '/padre/asistencia',
+    name: 'PadreAsistencia',
+    component: () => import('@/views/padre/AsistenciaView.vue'),
     meta: { requiresAuth: true, roles: ['padre'] }
   },
   {

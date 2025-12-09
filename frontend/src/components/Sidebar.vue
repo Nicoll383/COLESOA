@@ -15,23 +15,9 @@
 
     <nav class="sidebar-nav">
       <div class="nav-section">
-        <p v-if="!collapsed" class="section-title">PRINCIPAL</p>
+        <p v-if="!collapsed" class="section-title">MENÚ</p>
         <router-link
           v-for="item in menuItems"
-          :key="item.path"
-          :to="item.path"
-          class="nav-item"
-          :class="{ active: isActive(item.path) }"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span v-if="!collapsed" class="nav-text">{{ item.label }}</span>
-        </router-link>
-      </div>
-
-      <div v-if="showAdminItems" class="nav-section">
-        <p v-if="!collapsed" class="section-title">ADMINISTRACIÓN</p>
-        <router-link
-          v-for="item in adminItems"
           :key="item.path"
           :to="item.path"
           class="nav-item"
@@ -89,40 +75,62 @@ const roleName = computed(() => {
   return roles[user.value?.rol] || user.value?.rol
 })
 
-const showAdminItems = computed(() => {
-  return ['administrador', 'secretaria'].includes(user.value?.rol)
-})
-
 const menuItems = computed(() => {
-  const items = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' }
-  ]
+  const role = user.value?.rol
 
-  // Estudiantes - todos excepto padres
-  if (user.value?.rol !== 'padre') {
-    items.push({ path: '/students', label: 'Estudiantes', icon: '👥' })
+  // Menús específicos por rol
+  const menus = {
+    administrador: [
+      { path: '/admin', label: 'Dashboard', icon: '📊' },
+      { path: '/students', label: 'Estudiantes', icon: '👥' },
+      { path: '/enrollments', label: 'Matrículas', icon: '📝' },
+      { path: '/payments', label: 'Pagos', icon: '💰' },
+      { path: '/secciones', label: 'Secciones', icon: '🏫' },
+      { path: '/cursos', label: 'Cursos', icon: '📚' },
+      { path: '/users', label: 'Usuarios', icon: '👤' },
+      { path: '/school-year-config', label: 'Año Escolar', icon: '📅' },
+      { path: '/reports', label: 'Reportes', icon: '📈' }
+    ],
+    secretaria: [
+      { path: '/secretaria', label: 'Dashboard', icon: '📊' },
+      { path: '/students', label: 'Estudiantes', icon: '👥' },
+      { path: '/enrollments', label: 'Matrículas', icon: '📝' },
+      { path: '/secretaria/documentos', label: 'Validar Documentos', icon: '📄' },
+      { path: '/secciones', label: 'Secciones', icon: '🏫' },
+      { path: '/cursos', label: 'Cursos', icon: '📚' }
+    ],
+    finanzas: [
+      { path: '/finanzas', label: 'Dashboard', icon: '📊' },
+      { path: '/finanzas/registrar-pago', label: 'Registrar Pago', icon: '💵' },
+      { path: '/finanzas/deudas', label: 'Deudas Pendientes', icon: '⚠️' },
+      { path: '/finanzas/historial', label: 'Historial de Pagos', icon: '📜' },
+      { path: '/finanzas/reportes', label: 'Reportes Financieros', icon: '📊' }
+    ],
+    docente: [
+      { path: '/docente', label: 'Dashboard', icon: '📊' },
+      { path: '/docente/horario', label: 'Mi Horario', icon: '📅' },
+      { path: '/docente/estudiantes', label: 'Mis Estudiantes', icon: '👥' },
+      { path: '/docente/notas', label: 'Registrar Notas', icon: '📝' },
+      { path: '/docente/asistencia', label: 'Asistencia', icon: '✅' },
+      { path: '/docente/reportes', label: 'Reportes', icon: '📈' }
+    ],
+    padre: [
+      { path: '/padre', label: 'Dashboard', icon: '📊' },
+      { path: '/padre/hijos', label: 'Mis Hijos', icon: '👨‍👩‍👧‍👦' },
+      { path: '/padre/cuotas', label: 'Cuotas y Pagos', icon: '💰' },
+      { path: '/padre/documentos', label: 'Documentos', icon: '📄' },
+      { path: '/padre/asistencia', label: 'Asistencia', icon: '📅' }
+    ]
   }
 
-  // Matrículas
-  items.push({ path: '/enrollments', label: 'Matrículas', icon: '📝' })
-
-  // Pagos
-  if (['administrador', 'secretaria', 'finanzas'].includes(user.value?.rol)) {
-    items.push({ path: '/payments', label: 'Pagos', icon: '💰' })
-  }
-
-  // Reportes
-  items.push({ path: '/reports', label: 'Reportes', icon: '📈' })
-
-  return items
+  return menus[role] || []
 })
 
-const adminItems = [
-  { path: '/secciones', label: 'Secciones', icon: '🏫' },
-  { path: '/cursos', label: 'Cursos', icon: '📚' },
-  { path: '/users', label: 'Usuarios', icon: '👤' },
-  { path: '/school-year-config', label: 'Año Escolar', icon: '📅' }
-]
+const showAdminItems = computed(() => {
+  return false // Ya no se usa, todo está en menuItems
+})
+
+const adminItems = [] // Ya no se usa
 
 const isActive = (path) => {
   return route.path.startsWith(path)
