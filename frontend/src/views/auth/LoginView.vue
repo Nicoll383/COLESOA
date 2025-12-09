@@ -64,24 +64,12 @@
       <div class="mt-6 text-center text-sm text-gray-600">
         <p>¿Olvidaste tu contraseña? <a href="#" class="text-primary font-medium">Recuperar</a></p>
       </div>
-
-      <!-- Usuarios de prueba (solo en desarrollo) -->
-      <div v-if="isDevelopment" class="mt-8 p-4 bg-gray-50 rounded-lg">
-        <p class="text-xs font-semibold text-gray-700 mb-2">Usuarios de prueba:</p>
-        <div class="text-xs text-gray-600 space-y-1">
-          <p><strong>Admin:</strong> admin@colegiosoa.edu.pe / Password123!</p>
-          <p><strong>Secretaría:</strong> secretaria@colegiosoa.edu.pe / Password123!</p>
-          <p><strong>Finanzas:</strong> finanzas@colegiosoa.edu.pe / Password123!</p>
-          <p><strong>Docente:</strong> docente1@colegiosoa.edu.pe / Password123!</p>
-          <p><strong>Padre:</strong> padre1@example.com / Password123!</p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -96,10 +84,6 @@ const formData = ref({
 const errors = ref({})
 const loginError = ref(null)
 const isLoading = ref(false)
-
-const isDevelopment = computed(() => {
-  return import.meta.env.MODE === 'development'
-})
 
 const validateForm = () => {
   errors.value = {}

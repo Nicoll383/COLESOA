@@ -171,7 +171,7 @@
             <h2 class="modal-title">
               {{ editingUser ? 'Editar Usuario' : 'Nuevo Usuario' }}
             </h2>
-            <button @click="closeModal" class="modal-close">×</button>
+            <button type="button" @click="closeModal" class="modal-close">×</button>
           </div>
 
           <div class="modal-body">
@@ -271,8 +271,8 @@
           </div>
 
           <div class="modal-footer">
-            <button @click="closeModal" class="btn btn-outline">Cancelar</button>
-            <button @click="saveUser" :disabled="saving" class="btn btn-primary">
+            <button type="button" @click="closeModal" class="btn btn-outline">Cancelar</button>
+            <button type="button" @click="saveUser" :disabled="saving" class="btn btn-primary">
               {{ saving ? 'Guardando...' : 'Guardar' }}
             </button>
           </div>
