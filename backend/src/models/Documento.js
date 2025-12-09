@@ -227,22 +227,31 @@ class Documento {
         de.id,
         de.estado,
         de.fecha_subida,
+        de.fecha_revision,
         de.archivo_url,
         de.nombre_archivo,
-        dr.nombre as documento_nombre,
+        de.observaciones,
+        dr.nombre as nombre_documento,
+        dr.descripcion as descripcion_documento,
         e.id as estudiante_id,
-        e.nombres as estudiante_nombres,
-        e.apellidos as estudiante_apellidos,
+        CONCAT(e.nombres, ' ', e.apellidos) as estudiante_nombre,
         e.dni as estudiante_dni,
         m.id as matricula_id,
-        m.codigo_matricula,
+        m.codigo_matricula as matricula_codigo,
         m.año_escolar
        FROM documentos_estudiante de
        INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
        INNER JOIN estudiantes e ON de.estudiante_id = e.id
        LEFT JOIN matriculas m ON de.matricula_id = m.id
-       WHERE de.estado IN ('enviado', 'en_revision')
-       ORDER BY de.fecha_subida ASC`
+       WHERE de.estado IN ('enviado', 'en_revision', 'aceptado', 'rechazado')
+       ORDER BY
+         CASE de.estado
+           WHEN 'enviado' THEN 1
+           WHEN 'en_revision' THEN 2
+           WHEN 'rechazado' THEN 3
+           WHEN 'aceptado' THEN 4
+         END,
+         de.fecha_subida ASC`
     );
 
     return rows;

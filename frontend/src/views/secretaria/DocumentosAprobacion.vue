@@ -1,22 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span class="text-lg font-bold text-white">SOA</span>
-          </div>
-          <h2 class="font-semibold text-gray-900">Panel de Secretaría - Aprobación de Documentos</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">{{ user?.nombre }} {{ user?.apellido }}</span>
-          <button @click="handleBack" class="btn btn-outline">Volver</button>
-          <button @click="handleLogout" class="btn btn-outline">Cerrar Sesión</button>
-        </div>
-      </div>
-    </nav>
-
-    <main class="container mx-auto px-4 py-8">
+  <AppLayout>
+    <div class="page-container">
       <h1 class="text-3xl font-bold mb-6">Aprobación de Documentos</h1>
 
       <!-- Filters -->
@@ -255,7 +239,7 @@
         </svg>
         <p class="text-gray-600">No hay documentos para revisar</p>
       </div>
-    </main>
+    </div>
 
     <!-- Rejection Modal -->
     <div
@@ -359,13 +343,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/components/AppLayout.vue'
 import documentoService from '@/services/documento.service'
 import { toast } from 'vue3-toastify'
 
@@ -402,9 +387,23 @@ let searchTimeout = null
 const cargarDocumentos = async () => {
   loading.value = true
   try {
-    const response = await documentoService.getPendientesRevision(filters.value)
+    const response = await documentoService.getDocumentosPendientesRevision()
     if (response.data.success) {
-      documentos.value = response.data.data
+      let docs = response.data.data
+
+      // Apply filters client-side
+      if (filters.value.estado) {
+        docs = docs.filter(d => d.estado === filters.value.estado)
+      }
+      if (filters.value.busqueda) {
+        const search = filters.value.busqueda.toLowerCase()
+        docs = docs.filter(d =>
+          d.estudiante_nombre.toLowerCase().includes(search) ||
+          d.estudiante_dni.includes(search)
+        )
+      }
+
+      documentos.value = docs
       calcularEstadisticas()
     }
   } catch (error) {
@@ -428,10 +427,11 @@ const cambiarEstado = async (documento, nuevoEstado, observaciones = '') => {
   processingDoc.value = documento.id
 
   try {
-    const response = await documentoService.cambiarEstado(documento.id, {
-      estado: nuevoEstado,
-      observaciones
-    })
+    const response = await documentoService.cambiarEstado(
+      documento.id,
+      nuevoEstado,
+      observaciones || null
+    )
 
     if (response.data.success) {
       toast.success(`Documento ${nuevoEstado === 'aceptado' ? 'aprobado' : 'actualizado'} exitosamente`)
@@ -549,16 +549,21 @@ const formatDate = (dateString) => {
   }).format(date)
 }
 
-const handleBack = () => {
-  router.push('/secretaria')
-}
-
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
-}
-
 onMounted(() => {
   cargarDocumentos()
 })
 </script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+}
+</style>
