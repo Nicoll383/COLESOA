@@ -1,4 +1,5 @@
 const Student = require('../models/Student');
+const CarnetService = require('../services/carnet.service');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
@@ -346,6 +347,51 @@ class StudentController {
       res.status(500).json({
         success: false,
         message: 'Error al agregar historial académico',
+        error: error.message
+      });
+    }
+  }
+
+  // Generar carnet de estudiante en PDF
+  static async generateCarnet(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Obtener datos completos del estudiante
+      const student = await Student.getById(id);
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Estudiante no encontrado'
+        });
+      }
+
+      // Obtener matrícula activa (si existe)
+      let enrollment = null;
+      try {
+        const enrollments = await Student.getEnrollments(id);
+        if (enrollments && enrollments.length > 0) {
+          // Buscar matrícula del año actual o la más reciente
+          const añoActual = new Date().getFullYear();
+          enrollment = enrollments.find(e => e.año_escolar === añoActual.toString()) || enrollments[0];
+        }
+      } catch (error) {
+        console.log('No se pudo obtener matrícula:', error.message);
+      }
+
+      // Generar PDF
+      const pdfBuffer = await CarnetService.generateCarnetBuffer(student, enrollment);
+
+      // Enviar PDF como respuesta
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=carnet-${student.codigo_estudiante}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Error al generar carnet:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al generar carnet del estudiante',
         error: error.message
       });
     }

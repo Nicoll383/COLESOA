@@ -34,4 +34,7 @@ router.post('/documentos', StudentController.uploadMiddleware(), StudentControll
 // Agregar historial académico
 router.post('/historial', secretariaOrAdmin, StudentController.agregarHistorial);
 
+// Generar carnet de estudiante
+router.get('/:id/carnet', StudentController.generateCarnet);
+
 module.exports = router;

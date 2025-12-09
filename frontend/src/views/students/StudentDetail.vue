@@ -9,6 +9,9 @@
           <h2 class="font-semibold text-gray-900">Detalle del Estudiante</h2>
         </div>
         <div class="flex items-center gap-4">
+          <button @click="generateCarnet" class="btn btn-secondary">
+            📄 Generar Carnet
+          </button>
           <button @click="goToEdit" class="btn btn-primary">
             Editar
           </button>
@@ -367,6 +370,37 @@ const formatTipoDocumento = (tipo) => {
     otro: 'Otro'
   }
   return tipos[tipo] || tipo
+}
+
+const generateCarnet = async () => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/students/${route.params.id}/carnet`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Error al generar el carnet')
+    }
+
+    // Crear blob del PDF
+    const blob = await response.blob()
+
+    // Crear URL temporal y descargar
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `carnet-${student.value.codigo_estudiante}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error:', error)
+    alert('Error al generar el carnet del estudiante')
+  }
 }
 
 const goBack = () => {
