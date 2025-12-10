@@ -64,10 +64,15 @@ class Enrollment {
       }
 
       // 6. Verificar documentos obligatorios completos
+      // NOTA: La validación de documentos se ha deshabilitado porque ahora los documentos
+      // se suben DESPUÉS de crear la matrícula (paso 4 del flujo de matrícula)
+      // Los documentos se inicializan automáticamente al confirmar la matrícula
+      /*
       const docsValidation = await Student.verificarDocumentosCompletos(estudiante_id);
       if (!docsValidation.completo) {
         throw new Error(`Faltan ${docsValidation.documentos_faltantes.length} documentos obligatorios`);
       }
+      */
 
       // 7. Obtener monto de matrícula desde configuración
       const [config] = await connection.execute(
