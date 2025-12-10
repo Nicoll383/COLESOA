@@ -739,7 +739,8 @@ const createEnrollment = async () => {
       estudiante_id: selectedStudent.value.id,
       seccion_id: selectedSeccion.value.id,
       año_escolar: añoEscolar.value,
-      monto_total: montoMatricula.value
+      monto_total: montoMatricula.value,
+      tipo_matricula: 'nuevo' // Por defecto es matrícula nueva
       // NO se incluye metodo_pago aquí - eso va en el paso 5
     }
 
