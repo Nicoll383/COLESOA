@@ -287,6 +287,140 @@ class PadreController {
       connection.release();
     }
   }
+
+  // ========== GESTIÓN DE DOCUMENTOS ==========
+
+  // Obtener documentos de un hijo
+  static async getDocumentosHijo(req, res) {
+    const connection = await db.getConnection();
+
+    try {
+      const userId = req.user.id;
+      const { estudianteId } = req.params;
+
+      // Verificar que el estudiante sea hijo del padre
+      const [verificacion] = await connection.execute(
+        `SELECT e.id, e.nombres, e.apellidos
+         FROM estudiantes e
+         INNER JOIN apoderados a ON e.id = a.estudiante_id
+         WHERE a.usuario_id = ? AND e.id = ?`,
+        [userId, estudianteId]
+      );
+
+      if (verificacion.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para ver los documentos de este estudiante'
+        });
+      }
+
+      // Obtener documentos del estudiante
+      const [documentos] = await connection.execute(
+        `SELECT
+          de.id,
+          de.estado,
+          de.archivo_url,
+          de.nombre_archivo,
+          de.fecha_subida,
+          de.fecha_revision,
+          de.observaciones,
+          dr.nombre,
+          dr.descripcion,
+          dr.obligatorio,
+          dr.tipo_archivo
+         FROM documentos_estudiante de
+         INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
+         WHERE de.estudiante_id = ?
+         ORDER BY dr.orden ASC`,
+        [estudianteId]
+      );
+
+      res.json({
+        success: true,
+        data: {
+          estudiante: verificacion[0],
+          documentos: documentos
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener documentos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener documentos',
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Subir documento
+  static async subirDocumento(req, res) {
+    const connection = await db.getConnection();
+
+    try {
+      const userId = req.user.id;
+      const { estudianteId, documentoId } = req.params;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se ha proporcionado ningún archivo'
+        });
+      }
+
+      // Verificar que el estudiante sea hijo del padre
+      const [verificacion] = await connection.execute(
+        `SELECT e.id
+         FROM estudiantes e
+         INNER JOIN apoderados a ON e.id = a.estudiante_id
+         WHERE a.usuario_id = ? AND e.id = ?`,
+        [userId, estudianteId]
+      );
+
+      if (verificacion.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para subir documentos de este estudiante'
+        });
+      }
+
+      // Subir el documento
+      const archivo_url = `/uploads/documentos/${file.filename}`;
+      const nombre_archivo = file.originalname;
+
+      await connection.execute(
+        `UPDATE documentos_estudiante
+         SET archivo_url = ?,
+             nombre_archivo = ?,
+             estado = 'enviado',
+             fecha_subida = NOW()
+         WHERE id = ?`,
+        [archivo_url, nombre_archivo, documentoId]
+      );
+
+      res.json({
+        success: true,
+        message: 'Documento subido exitosamente. Pendiente de validación por secretaría',
+        data: {
+          id: documentoId,
+          archivo_url,
+          nombre_archivo,
+          estado: 'enviado'
+        }
+      });
+    } catch (error) {
+      console.error('Error al subir documento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al subir el documento',
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  }
 }
 
 module.exports = PadreController;

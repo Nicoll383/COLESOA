@@ -256,6 +256,140 @@ class Documento {
 
     return rows;
   }
+
+  // Obtener estadísticas de documentos de un estudiante
+  static async getEstadisticasDocumentos(estudianteId) {
+    const pool = getPool();
+
+    const [rows] = await pool.execute(
+      `SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN obligatorio = 1 THEN 1 ELSE 0 END) as total_obligatorios,
+        SUM(CASE WHEN de.estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+        SUM(CASE WHEN de.estado = 'pendiente' AND dr.obligatorio = 1 THEN 1 ELSE 0 END) as pendientes_obligatorios,
+        SUM(CASE WHEN de.estado = 'enviado' OR de.estado = 'en_revision' THEN 1 ELSE 0 END) as en_proceso,
+        SUM(CASE WHEN de.estado = 'aceptado' THEN 1 ELSE 0 END) as aceptados,
+        SUM(CASE WHEN de.estado = 'rechazado' THEN 1 ELSE 0 END) as rechazados
+       FROM documentos_estudiante de
+       INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
+       WHERE de.estudiante_id = ?`,
+      [estudianteId]
+    );
+
+    return rows[0] || {
+      total: 0,
+      total_obligatorios: 0,
+      pendientes: 0,
+      pendientes_obligatorios: 0,
+      en_proceso: 0,
+      aceptados: 0,
+      rechazados: 0
+    };
+  }
+
+  // Obtener documentos de un estudiante (alias para compatibilidad)
+  static async getByEstudiante(estudianteId) {
+    return this.getDocumentosEstudiante(estudianteId);
+  }
+
+  // Encontrar un documento por ID
+  static async findById(documentoId) {
+    const pool = getPool();
+
+    const [rows] = await pool.execute(
+      `SELECT
+        de.*,
+        dr.nombre,
+        dr.descripcion,
+        dr.obligatorio,
+        dr.tipo_archivo
+       FROM documentos_estudiante de
+       INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
+       WHERE de.id = ?`,
+      [documentoId]
+    );
+
+    return rows[0] || null;
+  }
+
+  // Subir archivo de documento
+  static async uploadFile(documentoId, file, userId) {
+    const pool = getPool();
+
+    // Aquí deberías implementar la lógica para guardar el archivo físicamente
+    // Por ahora, simulamos que el archivo se guarda en /uploads/documentos/
+    const archivo_url = `/uploads/documentos/${file.filename}`;
+    const nombre_archivo = file.originalname;
+
+    const [result] = await pool.execute(
+      `UPDATE documentos_estudiante
+       SET archivo_url = ?,
+           nombre_archivo = ?,
+           estado = 'enviado',
+           fecha_subida = NOW()
+       WHERE id = ?`,
+      [archivo_url, nombre_archivo, documentoId]
+    );
+
+    // Registrar en seguimiento
+    await pool.execute(
+      `INSERT INTO seguimiento_documentos
+       (documento_estudiante_id, estado_anterior, estado_nuevo, observaciones, usuario_id)
+       VALUES (?, 'pendiente', 'enviado', 'Documento subido por el padre', ?)`,
+      [documentoId, userId]
+    );
+
+    return {
+      id: documentoId,
+      archivo_url,
+      nombre_archivo,
+      estado: 'enviado',
+      fecha_subida: new Date()
+    };
+  }
+
+  // Validar/Rechazar documento (para secretaria)
+  static async validarDocumento(documentoId, estado, observaciones, userId) {
+    const pool = getPool();
+
+    if (!['aceptado', 'rechazado'].includes(estado)) {
+      throw new Error('Estado inválido. Debe ser "aceptado" o "rechazado"');
+    }
+
+    // Obtener estado anterior
+    const documento = await this.findById(documentoId);
+    if (!documento) {
+      throw new Error('Documento no encontrado');
+    }
+
+    const estadoAnterior = documento.estado;
+
+    // Actualizar documento
+    const [result] = await pool.execute(
+      `UPDATE documentos_estudiante
+       SET estado = ?,
+           fecha_revision = NOW(),
+           revisado_por = ?,
+           observaciones = ?
+       WHERE id = ?`,
+      [estado, userId, observaciones, documentoId]
+    );
+
+    // Registrar en seguimiento
+    await pool.execute(
+      `INSERT INTO seguimiento_documentos
+       (documento_estudiante_id, estado_anterior, estado_nuevo, observaciones, usuario_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [documentoId, estadoAnterior, estado, observaciones, userId]
+    );
+
+    return {
+      id: documentoId,
+      estado,
+      fecha_revision: new Date(),
+      observaciones
+    };
+  }
 }
 
 module.exports = Documento;
