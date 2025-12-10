@@ -312,8 +312,8 @@
               </div>
             </div>
 
-            <!-- Información Financiera -->
-            <div class="review-card highlight-card">
+            <!-- Información Financiera (solo informativa) -->
+            <div class="review-card info-card">
               <h3 class="review-card-title">
                 <span class="review-icon">💰</span>
                 Información Financiera
@@ -323,36 +323,10 @@
                   <span class="financial-label">Monto de Matrícula:</span>
                   <span class="financial-amount">S/. {{ montoMatricula.toFixed(2) }}</span>
                 </div>
-                <div class="financial-total">
-                  <span class="financial-label">Total a Pagar:</span>
-                  <span class="financial-amount-total">S/. {{ montoMatricula.toFixed(2) }}</span>
-                </div>
               </div>
               <p class="financial-note">
-                * El pago de matrícula debe realizarse para confirmar la inscripción
+                * El pago se realizará en el siguiente paso
               </p>
-
-              <!-- Método de Pago -->
-              <div class="payment-method-section">
-                <h4 class="payment-title">Método de Pago</h4>
-                <div class="payment-methods-grid">
-                  <label
-                    v-for="method in paymentMethods"
-                    :key="method.value"
-                    class="payment-method-card"
-                    :class="{ 'payment-method-selected': metodoPago === method.value }"
-                  >
-                    <input
-                      type="radio"
-                      v-model="metodoPago"
-                      :value="method.value"
-                      class="payment-radio"
-                    />
-                    <div class="payment-icon">{{ method.icon }}</div>
-                    <div class="payment-name">{{ method.label }}</div>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -440,17 +414,125 @@
             <button @click="skipDocuments" class="btn btn-outline">
               Omitir Documentos
             </button>
-            <button @click="continueToConfirmation" class="btn btn-success">
-              Continuar →
+            <button @click="continueToPayment" class="btn btn-success">
+              Continuar al Pago →
             </button>
           </div>
         </div>
 
-        <!-- Step 5: Confirmación -->
+        <!-- Step 5: Pagar -->
         <div v-if="currentStep === 5" class="step-content">
+          <h2 class="step-title">
+            <span class="step-icon">💳</span>
+            Procesar Pago de Matrícula
+          </h2>
+          <p class="step-description">Seleccione el método de pago y registre el pago de la matrícula</p>
+
+          <!-- Resumen de Matrícula -->
+          <div class="payment-summary-card">
+            <h3 class="payment-summary-title">Resumen de Matrícula</h3>
+            <div class="payment-summary-content">
+              <div class="summary-row">
+                <span class="summary-label">Código de Matrícula:</span>
+                <span class="summary-value">{{ createdEnrollment?.codigo_matricula }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Estudiante:</span>
+                <span class="summary-value">{{ selectedStudent?.nombres }} {{ selectedStudent?.apellidos }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Grado y Sección:</span>
+                <span class="summary-value">{{ selectedSeccion?.grado_nombre }} - Sección {{ selectedSeccion?.nombre }}</span>
+              </div>
+              <div class="summary-row summary-total">
+                <span class="summary-label">Monto a Pagar:</span>
+                <span class="summary-amount">S/. {{ montoMatricula.toFixed(2) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Método de Pago -->
+          <div class="payment-method-section">
+            <h3 class="payment-section-title">
+              <span class="payment-icon">💳</span>
+              Seleccione el Método de Pago
+            </h3>
+            <div class="payment-methods-grid">
+              <label
+                v-for="method in paymentMethods"
+                :key="method.value"
+                class="payment-method-card"
+                :class="{ 'payment-method-selected': metodoPago === method.value }"
+              >
+                <input
+                  type="radio"
+                  v-model="metodoPago"
+                  :value="method.value"
+                  class="payment-radio"
+                />
+                <div class="payment-icon">{{ method.icon }}</div>
+                <div class="payment-name">{{ method.label }}</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Información adicional de pago -->
+          <div class="payment-details-section">
+            <div class="form-group">
+              <label class="form-label">Número de Comprobante / Referencia (Opcional)</label>
+              <input
+                v-model="paymentReference"
+                type="text"
+                class="form-input"
+                placeholder="Ej: 0001-12345, Operación #123456"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Observaciones (Opcional)</label>
+              <textarea
+                v-model="paymentObservations"
+                class="form-textarea"
+                rows="3"
+                placeholder="Agregue cualquier observación sobre el pago..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div v-if="paymentError" class="alert alert-error mb-4">
+            {{ paymentError }}
+          </div>
+
+          <div class="payment-note">
+            <div class="note-icon">ℹ️</div>
+            <div>
+              <p class="note-title">Nota Importante</p>
+              <p class="note-text">
+                Este paso registra el pago en el sistema. Puede omitir este paso y realizar el pago posteriormente desde el módulo de finanzas.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button @click="prevStep" class="btn btn-outline" :disabled="processingPayment">← Atrás</button>
+            <button @click="skipPayment" class="btn btn-outline" :disabled="processingPayment">
+              Omitir Pago (Pagar Después)
+            </button>
+            <button
+              @click="processPayment"
+              :disabled="processingPayment"
+              class="btn btn-success"
+            >
+              <span v-if="processingPayment">Procesando pago...</span>
+              <span v-else>💳 Confirmar Pago</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 6: Confirmación Final -->
+        <div v-if="currentStep === 6" class="step-content">
           <div class="success-container">
             <div class="success-icon">✓</div>
-            <h2 class="success-title">¡Matrícula Creada Exitosamente!</h2>
+            <h2 class="success-title">¡Matrícula Completada Exitosamente!</h2>
             <p class="success-message">
               La matrícula ha sido registrada con el código:
             </p>
@@ -460,7 +542,23 @@
               <p><strong>Estudiante:</strong> {{ selectedStudent?.nombres }} {{ selectedStudent?.apellidos }}</p>
               <p><strong>Grado:</strong> {{ selectedSeccion?.grado_nombre }} - Sección {{ selectedSeccion?.nombre }}</p>
               <p><strong>Año Escolar:</strong> {{ añoEscolar }}</p>
-              <p><strong>Estado:</strong> <span class="badge-warning">Pendiente de Pago</span></p>
+              <p><strong>Monto de Matrícula:</strong> S/. {{ montoMatricula.toFixed(2) }}</p>
+              <p>
+                <strong>Estado del Pago:</strong>
+                <span v-if="paymentProcessed" class="badge-success">✓ Pago Registrado ({{ metodoPago }})</span>
+                <span v-else class="badge-warning">⏳ Pendiente de Pago</span>
+              </p>
+            </div>
+
+            <div v-if="!paymentProcessed" class="success-note">
+              <div class="note-icon">ℹ️</div>
+              <div>
+                <p class="note-title">Completar Pago</p>
+                <p class="note-text">
+                  El pago de la matrícula puede realizarse posteriormente desde el módulo de finanzas
+                  o desde el portal de padres. El código de matrícula es: <strong>{{ createdEnrollment?.codigo_matricula }}</strong>
+                </p>
+              </div>
             </div>
 
             <div class="success-actions">
@@ -490,7 +588,7 @@ import AppLayout from '@/components/AppLayout.vue'
 
 const router = useRouter()
 
-const steps = ['Seleccionar Estudiante', 'Grado/Sección', 'Confirmar y Pagar', 'Documentos', 'Finalizar']
+const steps = ['Seleccionar Estudiante', 'Grado/Sección', 'Revisar', 'Documentos', 'Pagar', 'Finalizar']
 const currentStep = ref(1)
 const añoEscolar = ref(2025)
 
@@ -508,18 +606,25 @@ const secciones = ref([])
 const selectedGrado = ref(null)
 const selectedSeccion = ref(null)
 
-// Step 3: Payment Method & Create Enrollment
+// Step 3: Create Enrollment (without payment)
 const creating = ref(false)
 const createError = ref(null)
 const montoMatricula = ref(500.00)
-const metodoPago = ref('efectivo')
 
 // Step 4: Upload Documents (Optional)
 const documentosRequeridos = ref([])
 const documentosSubidos = ref([])
 const uploadingDocs = ref(false)
 
-// Step 5: Success
+// Step 5: Payment
+const metodoPago = ref('efectivo')
+const paymentReference = ref('')
+const paymentObservations = ref('')
+const processingPayment = ref(false)
+const paymentError = ref(null)
+const paymentProcessed = ref(false)
+
+// Step 6: Success
 const createdEnrollment = ref(null)
 
 // Computed
@@ -634,8 +739,8 @@ const createEnrollment = async () => {
       estudiante_id: selectedStudent.value.id,
       seccion_id: selectedSeccion.value.id,
       año_escolar: añoEscolar.value,
-      monto_total: montoMatricula.value,
-      metodo_pago: metodoPago.value
+      monto_total: montoMatricula.value
+      // NO se incluye metodo_pago aquí - eso va en el paso 5
     }
 
     const response = await enrollmentService.create(enrollmentData)
@@ -651,6 +756,44 @@ const createEnrollment = async () => {
   } finally {
     creating.value = false
   }
+}
+
+// Procesar pago (Paso 5)
+const processPayment = async () => {
+  processingPayment.value = true
+  paymentError.value = null
+
+  try {
+    // Registrar el pago de la matrícula
+    const paymentData = {
+      enrollment_id: createdEnrollment.value.id,
+      monto: montoMatricula.value,
+      metodo_pago: metodoPago.value,
+      concepto: 'Pago de Matrícula',
+      referencia: paymentReference.value || null,
+      observaciones: paymentObservations.value || null
+    }
+
+    // TODO: Implementar servicio de pagos
+    // await paymentService.create(paymentData)
+
+    // Simular respuesta exitosa
+    console.log('Procesando pago:', paymentData)
+
+    paymentProcessed.value = true
+    currentStep.value = 6 // Ir a confirmación final
+  } catch (error) {
+    paymentError.value = error.response?.data?.message || 'Error al procesar el pago'
+    console.error('Error:', error)
+  } finally {
+    processingPayment.value = false
+  }
+}
+
+// Omitir pago (Paso 5)
+const skipPayment = () => {
+  paymentProcessed.value = false
+  currentStep.value = 6 // Ir a confirmación final sin registrar pago
 }
 
 const nextStep = async () => {
@@ -748,12 +891,12 @@ const handleDocumentUpload = async (documentoId, event) => {
 
 // Saltar paso de documentos (opcional)
 const skipDocuments = () => {
-  currentStep.value = 5 // Ir a confirmación
+  currentStep.value = 5 // Ir a pago
 }
 
-// Continuar al paso de confirmación
-const continueToConfirmation = () => {
-  currentStep.value = 5
+// Continuar al paso de pago
+const continueToPayment = () => {
+  currentStep.value = 5 // Ir a pago
 }
 
 const formatDate = (date) => {
@@ -1323,6 +1466,11 @@ onMounted(() => {
   border-color: #fbbf24;
 }
 
+.info-card {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+}
+
 .review-card-title {
   font-size: 1.125rem;
   font-weight: 600;
@@ -1775,6 +1923,124 @@ onMounted(() => {
   color: #1e3a8a;
   margin: 0;
   line-height: 1.5;
+}
+
+/* Payment Summary Card (Step 5) */
+.payment-summary-card {
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.payment-summary-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.payment-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summary-label {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.summary-total {
+  border-bottom: none;
+  padding-top: 1.5rem;
+  border-top: 2px solid #111827;
+}
+
+.summary-amount {
+  font-size: 1.75rem;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.payment-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.payment-details-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.payment-note {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #dbeafe;
+  border: 2px solid #3b82f6;
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.success-note {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.badge-success {
+  padding: 0.25rem 0.75rem;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .mb-4 {
