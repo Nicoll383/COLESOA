@@ -109,14 +109,14 @@ class Enrollment {
       await connection.execute(
         `INSERT INTO historial_academico (
           estudiante_id, año_escolar, grado_id, seccion_id,
-          estado_año, colegio_procedencia
+          estado, observaciones
         ) VALUES (?, ?, ?, ?, 'aprobado', ?)`,
         [
           estudiante_id,
           año_escolar,
           seccion.grado_id,
           seccion_id,
-          tipo_matricula === 'traslado' ? enrollmentData.colegio_procedencia : null
+          tipo_matricula === 'traslado' ? `Traslado de ${enrollmentData.colegio_procedencia || 'otro colegio'}` : null
         ]
       );
 
@@ -379,7 +379,7 @@ class Enrollment {
 
       if (matricula.length > 0) {
         await connection.execute(
-          'UPDATE historial_academico SET estado_año = "retirado" WHERE estudiante_id = ? AND año_escolar = ?',
+          'UPDATE historial_academico SET estado = "retirado" WHERE estudiante_id = ? AND año_escolar = ?',
           [matricula[0].estudiante_id, matricula[0].año_escolar]
         );
       }

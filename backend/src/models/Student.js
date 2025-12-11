@@ -545,16 +545,15 @@ class Student {
       const [result] = await connection.execute(
         `INSERT INTO historial_academico (
           estudiante_id, año_escolar, grado_id, seccion_id,
-          promedio_final, estado_año, colegio_procedencia, observaciones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          promedio_final, estado, observaciones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           historialData.estudiante_id,
           historialData.año_escolar,
           historialData.grado_id,
           historialData.seccion_id || null,
           historialData.promedio_final || null,
-          historialData.estado_año,
-          historialData.colegio_procedencia || null,
+          historialData.estado || 'aprobado',
           historialData.observaciones || null
         ]
       );
