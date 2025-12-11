@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { getPool } = require('./src/config/mysql');
+const { connectMySQL } = require('./src/config/mysql');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -51,9 +51,12 @@ const testUsers = [
 ];
 
 async function createTestUsers() {
-  const pool = getPool();
+  let pool;
 
   try {
+    console.log('🔧 Conectando a MySQL...\n');
+    pool = await connectMySQL();
+
     console.log('🔧 Creando usuarios de prueba...\n');
 
     for (const user of testUsers) {
