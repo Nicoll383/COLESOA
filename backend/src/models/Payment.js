@@ -13,13 +13,42 @@ class Payment {
       observaciones
     } = paymentData;
 
+    // Generar código de pago único
+    const codigo_pago = await this.generarCodigoPago();
+
     const [result] = await pool.execute(
-      `INSERT INTO pagos (matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones, estado, fecha_pago)
-       VALUES (?, ?, ?, ?, ?, ?, 'completado', NOW())`,
-      [matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones]
+      `INSERT INTO pagos (codigo_pago, matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones, estado, fecha_pago)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'completado', NOW())`,
+      [codigo_pago, matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones]
     );
 
     return await this.findById(result.insertId);
+  }
+
+  // Generar código de pago único
+  static async generarCodigoPago() {
+    const pool = getPool();
+    const año = new Date().getFullYear();
+
+    // Obtener el último código del año actual
+    const [rows] = await pool.execute(
+      `SELECT codigo_pago FROM pagos
+       WHERE codigo_pago LIKE ?
+       ORDER BY codigo_pago DESC
+       LIMIT 1`,
+      [`PAG-${año}-%`]
+    );
+
+    let numero = 1;
+    if (rows.length > 0) {
+      const ultimoCodigo = rows[0].codigo_pago;
+      const partes = ultimoCodigo.split('-');
+      if (partes.length === 3) {
+        numero = parseInt(partes[2]) + 1;
+      }
+    }
+
+    return `PAG-${año}-${String(numero).padStart(6, '0')}`;
   }
 
   // Obtener pago por ID
