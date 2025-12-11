@@ -13,7 +13,7 @@ const testUsers = [
     password: 'admin123',
     nombre: 'Admin',
     apellido: 'Sistema',
-    rol: 'admin',
+    rol: 'administrador',
     dni: '12345678'
   },
   {
