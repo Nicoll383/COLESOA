@@ -11,6 +11,25 @@ class Enrollment {
 
       const { estudiante_id, seccion_id, año_escolar, tipo_matricula, observaciones, created_by } = enrollmentData;
 
+      // 0. Verificar si ya existe una matrícula pendiente para este estudiante en este año
+      const [matriculasExistentes] = await connection.execute(
+        `SELECT m.*, s.nombre as seccion_nombre, g.nombre as grado_nombre
+         FROM matriculas m
+         INNER JOIN secciones s ON m.seccion_id = s.id
+         INNER JOIN grados g ON s.grado_id = g.id
+         WHERE m.estudiante_id = ? AND m.año_escolar = ? AND m.estado = 'pendiente'`,
+        [estudiante_id, año_escolar]
+      );
+
+      if (matriculasExistentes.length > 0) {
+        await connection.commit();
+        return {
+          matriculaId: matriculasExistentes[0].id,
+          codigoMatricula: matriculasExistentes[0].codigo_matricula,
+          mensaje: 'Ya existe una matrícula pendiente para este estudiante. Continúe con el pago.'
+        };
+      }
+
       // 1. Verificar que el estudiante existe
       const student = await Student.findById(estudiante_id);
       if (!student) {
