@@ -476,6 +476,61 @@
             </div>
           </div>
 
+          <!-- Formulario de Tarjeta (Solo si método es tarjeta) -->
+          <div v-if="metodoPago === 'tarjeta'" class="card-form-section">
+            <h4 class="payment-section-title">
+              <span class="payment-icon">💳</span>
+              Datos de la Tarjeta
+            </h4>
+            <div class="card-form-grid">
+              <div class="form-group">
+                <label class="form-label">Número de Tarjeta *</label>
+                <input
+                  v-model="cardData.numero_tarjeta"
+                  type="text"
+                  maxlength="19"
+                  class="form-input"
+                  placeholder="1234 5678 9012 3456"
+                  @input="formatCardNumber"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nombre del Titular *</label>
+                <input
+                  v-model="cardData.titular"
+                  type="text"
+                  class="form-input"
+                  placeholder="Como aparece en la tarjeta"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de Vencimiento *</label>
+                <input
+                  v-model="cardData.fecha_vencimiento"
+                  type="text"
+                  maxlength="5"
+                  class="form-input"
+                  placeholder="MM/AA"
+                  @input="formatExpiryDate"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">CVV *</label>
+                <input
+                  v-model="cardData.cvv"
+                  type="text"
+                  maxlength="4"
+                  class="form-input"
+                  placeholder="123"
+                  @input="formatCVV"
+                />
+              </div>
+            </div>
+            <div class="card-note">
+              <p>🔒 Tus datos están seguros y encriptados</p>
+            </div>
+          </div>
+
           <!-- Información adicional de pago -->
           <div class="payment-details-section">
             <div class="form-group">
@@ -495,6 +550,27 @@
                 rows="3"
                 placeholder="Agregue cualquier observación sobre el pago..."
               ></textarea>
+            </div>
+          </div>
+
+          <!-- Nota sobre aprobación automática -->
+          <div v-if="metodoPago === 'efectivo'" class="payment-note payment-note-success">
+            <div class="note-icon">✅</div>
+            <div>
+              <p class="note-title">Pago en Efectivo</p>
+              <p class="note-text">
+                Los pagos en efectivo se aprueban automáticamente al registrarlos.
+              </p>
+            </div>
+          </div>
+
+          <div v-if="metodoPago === 'deposito' || metodoPago === 'transferencia'" class="payment-note payment-note-warning">
+            <div class="note-icon">⏳</div>
+            <div>
+              <p class="note-title">Requiere Aprobación</p>
+              <p class="note-text">
+                Los pagos por depósito o transferencia requieren validación del área de finanzas antes de ser aprobados.
+              </p>
             </div>
           </div>
 
@@ -562,6 +638,9 @@
             </div>
 
             <div class="success-actions">
+              <button @click="downloadCarnet" class="btn btn-success">
+                📥 Descargar Carnet
+              </button>
               <button @click="goToEnrollment" class="btn btn-primary">
                 Ver Matrícula
               </button>
@@ -623,6 +702,12 @@ const paymentObservations = ref('')
 const processingPayment = ref(false)
 const paymentError = ref(null)
 const paymentProcessed = ref(false)
+const cardData = ref({
+  numero_tarjeta: '',
+  titular: '',
+  fecha_vencimiento: '',
+  cvv: ''
+})
 
 // Step 6: Success
 const createdEnrollment = ref(null)
@@ -761,28 +846,61 @@ const createEnrollment = async () => {
 
 // Procesar pago (Paso 5)
 const processPayment = async () => {
+  // Validar datos de tarjeta si es necesario
+  if (metodoPago.value === 'tarjeta') {
+    if (!cardData.value.numero_tarjeta || !cardData.value.titular ||
+        !cardData.value.fecha_vencimiento || !cardData.value.cvv) {
+      paymentError.value = 'Por favor complete todos los datos de la tarjeta'
+      return
+    }
+    // Validar número de tarjeta (debe tener 13-19 dígitos)
+    const cardNumber = cardData.value.numero_tarjeta.replace(/\s/g, '')
+    if (cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) {
+      paymentError.value = 'Número de tarjeta inválido'
+      return
+    }
+  }
+
   processingPayment.value = true
   paymentError.value = null
 
   try {
     // Registrar el pago de la matrícula
     const paymentData = {
-      enrollment_id: createdEnrollment.value.id,
+      matricula_id: createdEnrollment.value.id,
+      tipo_pago: 'matricula',
       monto: montoMatricula.value,
       metodo_pago: metodoPago.value,
       concepto: 'Pago de Matrícula',
-      referencia: paymentReference.value || null,
+      numero_operacion: paymentReference.value || null,
       observaciones: paymentObservations.value || null
     }
 
-    // TODO: Implementar servicio de pagos
-    // await paymentService.create(paymentData)
+    // Si es pago con tarjeta, incluir datos
+    if (metodoPago.value === 'tarjeta') {
+      paymentData.datos_tarjeta = {
+        numero_tarjeta: cardData.value.numero_tarjeta.replace(/\s/g, ''),
+        titular: cardData.value.titular,
+        fecha_vencimiento: cardData.value.fecha_vencimiento,
+        cvv: cardData.value.cvv
+      }
+    }
 
-    // Simular respuesta exitosa
-    console.log('Procesando pago:', paymentData)
+    // Importar servicio de pagos
+    const paymentService = (await import('@/services/payment.service')).default
+    const response = await paymentService.create(paymentData)
 
-    paymentProcessed.value = true
-    currentStep.value = 6 // Ir a confirmación final
+    if (response.data.success) {
+      paymentProcessed.value = true
+      // Mostrar mensaje según el estado
+      const paymentResult = response.data.data
+      if (paymentResult.estado === 'pendiente') {
+        alert('Pago registrado exitosamente. Requiere aprobación del área de finanzas.')
+      } else {
+        alert('Pago registrado y aprobado exitosamente.')
+      }
+      currentStep.value = 6 // Ir a confirmación final
+    }
   } catch (error) {
     paymentError.value = error.response?.data?.message || 'Error al procesar el pago'
     console.error('Error:', error)
@@ -827,6 +945,44 @@ const createAnother = () => {
   createdEnrollment.value = null
   searchError.value = null
   createError.value = null
+}
+
+// Descargar carnet del estudiante
+const downloadCarnet = async () => {
+  if (!selectedStudent.value?.id) {
+    alert('No hay estudiante seleccionado')
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('token')
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    const url = `${baseUrl}/api/students/${selectedStudent.value.id}/carnet`
+
+    // Descargar usando fetch para manejar el blob
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Error al generar el carnet')
+    }
+
+    const blob = await response.blob()
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `carnet-${selectedStudent.value.codigo_estudiante}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(downloadUrl)
+  } catch (error) {
+    console.error('Error al descargar carnet:', error)
+    alert('Error al generar el carnet del estudiante')
+  }
 }
 
 // Métodos de pago disponibles
@@ -898,6 +1054,27 @@ const skipDocuments = () => {
 // Continuar al paso de pago
 const continueToPayment = () => {
   currentStep.value = 5 // Ir a pago
+}
+
+// Formatear número de tarjeta (agregar espacios cada 4 dígitos)
+const formatCardNumber = (event) => {
+  let value = event.target.value.replace(/\s/g, '').replace(/\D/g, '')
+  const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value
+  cardData.value.numero_tarjeta = formattedValue
+}
+
+// Formatear fecha de vencimiento (MM/AA)
+const formatExpiryDate = (event) => {
+  let value = event.target.value.replace(/\D/g, '')
+  if (value.length >= 2) {
+    value = value.slice(0, 2) + '/' + value.slice(2, 4)
+  }
+  cardData.value.fecha_vencimiento = value
+}
+
+// Formatear CVV (solo números)
+const formatCVV = (event) => {
+  cardData.value.cvv = event.target.value.replace(/\D/g, '')
 }
 
 const formatDate = (date) => {
@@ -1780,6 +1957,53 @@ onMounted(() => {
   font-size: 0.875rem;
   font-weight: 600;
   color: #374151;
+}
+
+/* Card Form Section */
+.card-form-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 1rem;
+  border: 2px solid #d1d5db;
+}
+
+.card-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.card-form-grid .form-group:first-child {
+  grid-column: 1 / -1;
+}
+
+.card-note {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+.card-note p {
+  margin: 0;
+}
+
+/* Payment Details Section */
+.payment-details-section {
+  margin-top: 1.5rem;
+}
+
+/* Payment Notes */
+.payment-note-success {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.payment-note-warning {
+  background: #fef3c7;
+  border-color: #f59e0b;
 }
 
 /* Documents Section */

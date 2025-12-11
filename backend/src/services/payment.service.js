@@ -8,7 +8,7 @@ class PaymentService {
     const pool = getPool();
     const {
       matricula_id, tipo_pago, concepto, monto, metodo_pago,
-      numero_operacion, observaciones
+      numero_operacion, observaciones, datos_tarjeta
     } = paymentData;
 
     // Generar código de pago
@@ -17,23 +17,54 @@ class PaymentService {
     // Fecha actual
     const fecha_pago = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
+    // Determinar estado según método de pago
+    let estado = 'completado';
+    let observacionesFinales = observaciones;
+
+    if (metodo_pago === 'efectivo') {
+      // Pagos en efectivo se aprueban automáticamente
+      estado = 'completado';
+      observacionesFinales = (observaciones || '') + ' [Pago en efectivo - Aprobado automáticamente]';
+    } else if (metodo_pago === 'deposito' || metodo_pago === 'transferencia') {
+      // Depósitos y transferencias requieren aprobación de finanzas
+      estado = 'pendiente';
+      observacionesFinales = (observaciones || '') + ' [Requiere validación de finanzas]';
+    } else if (metodo_pago === 'tarjeta') {
+      // Pagos con tarjeta se procesan y aprueban si los datos son válidos
+      if (datos_tarjeta && datos_tarjeta.numero_tarjeta) {
+        // TODO: Integrar con pasarela de pagos real
+        // Por ahora simulamos aprobación exitosa
+        estado = 'completado';
+        observacionesFinales = (observaciones || '') + ` [Tarjeta **** ${datos_tarjeta.numero_tarjeta.slice(-4)}]`;
+      } else {
+        throw new Error('Datos de tarjeta inválidos o incompletos');
+      }
+    } else {
+      // Yape, Plin y otros métodos se aprueban automáticamente
+      estado = 'completado';
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO pagos
        (codigo_pago, matricula_id, tipo_pago, concepto, monto, fecha_pago,
         metodo_pago, numero_operacion, estado, observaciones, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completado', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [codigo_pago, matricula_id, tipo_pago, concepto, monto, fecha_pago,
-       metodo_pago, numero_operacion, observaciones, userId]
+       metodo_pago, numero_operacion, estado, observacionesFinales, userId]
     );
 
-    // Si es pago de matrícula, actualizar estado
-    if (tipo_pago === 'matricula') {
+    // Si es pago de matrícula y está completado, actualizar estado
+    if (tipo_pago === 'matricula' && estado === 'completado') {
       await this.checkAndUpdateEnrollmentStatus(matricula_id);
     }
 
     return {
       id: result.insertId,
-      codigo_pago
+      codigo_pago,
+      estado,
+      mensaje: estado === 'pendiente'
+        ? 'Pago registrado. Pendiente de aprobación por finanzas.'
+        : 'Pago registrado y aprobado exitosamente.'
     };
   }
 
