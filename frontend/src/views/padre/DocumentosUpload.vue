@@ -380,7 +380,8 @@ const uploadFile = async (file, documento) => {
   uploadingDoc.value = documento.id
 
   try {
-    const response = await documentoService.subirDocumento(documento.id, file)
+    // Pass estudianteId along with documento.id and file
+    const response = await documentoService.subirDocumento(documento.id, file, estudianteSeleccionado.value)
     if (response.data.success) {
       alert('Documento subido exitosamente. Está en revisión.')
       await cargarDocumentos() // Reload documents
