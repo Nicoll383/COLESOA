@@ -416,7 +416,7 @@ class Student {
     try {
       // Obtener el último año académico del estudiante
       const [historial] = await connection.execute(
-        `SELECT ha.grado_id, ha.estado_año, g.grado
+        `SELECT ha.grado_id, ha.estado, g.grado
          FROM historial_academico ha
          INNER JOIN grados g ON ha.grado_id = g.id
          WHERE ha.estudiante_id = ?
@@ -431,7 +431,7 @@ class Student {
       }
 
       const ultimoGrado = historial[0].grado;
-      const estadoAño = historial[0].estado_año;
+      const estadoAño = historial[0].estado;
 
       // Obtener el grado al que se quiere matricular
       const [gradoDestino] = await connection.execute(

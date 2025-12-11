@@ -59,11 +59,24 @@ CREATE TABLE IF NOT EXISTS `documentos_estudiante` (
   `estado` ENUM('pendiente', 'aprobado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` TEXT,
   `subido_por` INT,
+  `verificado_por` INT,
+  `fecha_verificacion` TIMESTAMP NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`subido_por`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`subido_por`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`verificado_por`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Agregar columnas faltantes si la tabla ya existe
+ALTER TABLE `documentos_estudiante`
+  ADD COLUMN IF NOT EXISTS `verificado_por` INT AFTER `subido_por`,
+  ADD COLUMN IF NOT EXISTS `fecha_verificacion` TIMESTAMP NULL AFTER `verificado_por`;
+
+-- Agregar foreign key si no existe
+ALTER TABLE `documentos_estudiante`
+  ADD CONSTRAINT `fk_documentos_verificado_por`
+  FOREIGN KEY IF NOT EXISTS (`verificado_por`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL;
 
 -- Insertar algunos cursos de ejemplo para secundaria
 INSERT INTO `cursos` (`nombre`, `codigo`, `descripcion`, `nivel`, `horas_semanales`) VALUES
