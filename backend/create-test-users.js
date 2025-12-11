@@ -61,26 +61,28 @@ async function createTestUsers() {
 
     for (const user of testUsers) {
       try {
-        // Verificar si el usuario ya existe
+        // Verificar si el usuario ya existe (por email o DNI)
         const [existing] = await pool.execute(
-          'SELECT id FROM usuarios WHERE email = ?',
-          [user.email]
+          'SELECT id, email, dni FROM usuarios WHERE email = ? OR dni = ?',
+          [user.email, user.dni]
         );
 
         if (existing.length > 0) {
-          // Actualizar el usuario existente
+          // Actualizar el usuario existente (sin cambiar el DNI si ya existe)
           const hashedPassword = await bcrypt.hash(user.password, 10);
+          const existingUser = existing[0];
 
           await pool.execute(
             `UPDATE usuarios
-             SET password = ?, nombre = ?, apellido = ?, rol = ?, dni = ?, estado = 'activo'
-             WHERE email = ?`,
-            [hashedPassword, user.nombre, user.apellido, user.rol, user.dni, user.email]
+             SET password = ?, nombre = ?, apellido = ?, rol = ?, email = ?, estado = 'activo'
+             WHERE id = ?`,
+            [hashedPassword, user.nombre, user.apellido, user.rol, user.email, existingUser.id]
           );
 
           console.log(`✅ Usuario actualizado: ${user.email}`);
           console.log(`   Contraseña: ${user.password}`);
-          console.log(`   Rol: ${user.rol}\n`);
+          console.log(`   Rol: ${user.rol}`);
+          console.log(`   DNI: ${existingUser.dni}\n`);
         } else {
           // Crear nuevo usuario
           const hashedPassword = await bcrypt.hash(user.password, 10);
