@@ -358,7 +358,7 @@ class StudentController {
       const { id } = req.params;
 
       // Obtener datos completos del estudiante
-      const student = await Student.getById(id);
+      const student = await Student.findById(id);
 
       if (!student) {
         return res.status(404).json({

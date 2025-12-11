@@ -13,11 +13,15 @@ CREATE TABLE IF NOT EXISTS `cursos` (
   `grado_id` INT,
   `creditos` INT DEFAULT 1,
   `horas_semanales` INT DEFAULT 2,
+  `color` VARCHAR(7) DEFAULT '#3b82f6',
   `estado` ENUM('activo', 'inactivo') DEFAULT 'activo',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`grado_id`) REFERENCES `grados`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Agregar columna color si la tabla ya existe
+ALTER TABLE `cursos` ADD COLUMN IF NOT EXISTS `color` VARCHAR(7) DEFAULT '#3b82f6' AFTER `horas_semanales`;
 
 -- Tabla: informacion_medica
 CREATE TABLE IF NOT EXISTS `informacion_medica` (
@@ -88,8 +92,26 @@ INSERT INTO `cursos` (`nombre`, `codigo`, `descripcion`, `nivel`, `horas_semanal
 ('Tutoría', 'TUT-PRI', 'Tutoría', 'primaria', 1)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
+-- Tabla: historial_academico
+CREATE TABLE IF NOT EXISTS `historial_academico` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `estudiante_id` INT NOT NULL,
+  `año_escolar` VARCHAR(9) NOT NULL,
+  `grado_id` INT,
+  `seccion_id` INT,
+  `promedio_final` DECIMAL(4,2),
+  `estado` ENUM('aprobado', 'desaprobado', 'retirado', 'traslado') DEFAULT 'aprobado',
+  `observaciones` TEXT,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`grado_id`) REFERENCES `grados`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`seccion_id`) REFERENCES `secciones`(`id`) ON DELETE SET NULL,
+  UNIQUE KEY `unique_estudiante_año` (`estudiante_id`, `año_escolar`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Verificar tablas creadas
 SELECT 'Tablas creadas exitosamente' AS resultado;
 SELECT TABLE_NAME FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = 'colegio_soa_db'
-AND TABLE_NAME IN ('cursos', 'informacion_medica', 'documentos_estudiante');
+AND TABLE_NAME IN ('cursos', 'informacion_medica', 'documentos_estudiante', 'historial_academico');
