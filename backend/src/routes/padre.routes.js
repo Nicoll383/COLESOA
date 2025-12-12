@@ -4,11 +4,18 @@ const PadreController = require('../controllers/padre.controller');
 const { authenticateToken, authorize } = require('../middlewares/auth.middleware');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Crear directorio de uploads si no existe
+const uploadDir = 'uploads/documentos/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Configuración de multer para subir archivos
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/documentos/')
+    cb(null, uploadDir)
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
