@@ -67,6 +67,17 @@
               <span class="action-subtitle">Inicializar documentos y enviar credenciales</span>
             </div>
           </button>
+          <button
+            v-if="enrollment.estado === 'completada'"
+            @click="mostrarCredenciales"
+            class="action-btn action-btn-info"
+          >
+            <span class="action-icon">🔑</span>
+            <div class="action-content">
+              <span class="action-title">Ver Credenciales de Acceso</span>
+              <span class="action-subtitle">Usuario y contraseña para padre y estudiante</span>
+            </div>
+          </button>
           <button @click="downloadContrato" :disabled="downloadingContrato" class="action-btn action-btn-primary">
             <span class="action-icon">📄</span>
             <div class="action-content">
@@ -254,6 +265,144 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal de credenciales -->
+      <div v-if="showCredencialesModal" class="modal-overlay" @click="showCredencialesModal = false">
+        <div class="modal-content modal-large" @click.stop>
+          <div class="modal-header-custom">
+            <h3 class="modal-title-custom">🔑 Credenciales de Acceso</h3>
+            <button @click="showCredencialesModal = false" class="btn-close-modal">✕</button>
+          </div>
+
+          <div v-if="loadingCredenciales" class="modal-loading">
+            <p>Cargando credenciales...</p>
+          </div>
+
+          <div v-else-if="credenciales" class="modal-body-custom">
+            <div class="credentials-info-banner">
+              <span class="info-icon">ℹ️</span>
+              <p>
+                Estas son las credenciales de acceso para el sistema.
+                <strong>Compártalas solo con el padre/tutor del estudiante.</strong>
+                El padre y estudiante podrán cambiar su contraseña después del primer inicio de sesión.
+              </p>
+            </div>
+
+            <!-- Credenciales del Padre -->
+            <div class="credential-card">
+              <div class="credential-header">
+                <h4 class="credential-title">👨‍👩‍👦 Acceso del Padre/Tutor</h4>
+                <span class="credential-badge">Padre</span>
+              </div>
+              <div class="credential-body">
+                <div class="credential-item">
+                  <label class="credential-label">Usuario/Email:</label>
+                  <div class="credential-value-container">
+                    <input
+                      type="text"
+                      :value="credenciales.padre.email"
+                      readonly
+                      class="credential-input"
+                    />
+                    <button
+                      @click="copyToClipboard(credenciales.padre.email)"
+                      class="btn-copy"
+                      title="Copiar"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <div class="credential-item">
+                  <label class="credential-label">Contraseña Inicial:</label>
+                  <div class="credential-value-container">
+                    <input
+                      type="text"
+                      :value="credenciales.padre.password"
+                      readonly
+                      class="credential-input"
+                    />
+                    <button
+                      @click="copyToClipboard(credenciales.padre.password)"
+                      class="btn-copy"
+                      title="Copiar"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <div class="credential-note">
+                  <strong>Nota:</strong> El padre puede ver información de todos sus hijos, realizar pagos,
+                  y gestionar documentos.
+                </div>
+              </div>
+            </div>
+
+            <!-- Credenciales del Estudiante -->
+            <div class="credential-card">
+              <div class="credential-header">
+                <h4 class="credential-title">👨‍🎓 Acceso del Estudiante</h4>
+                <span class="credential-badge credential-badge-student">Estudiante</span>
+              </div>
+              <div class="credential-body">
+                <div class="credential-item">
+                  <label class="credential-label">Usuario/Email:</label>
+                  <div class="credential-value-container">
+                    <input
+                      type="text"
+                      :value="credenciales.estudiante.email"
+                      readonly
+                      class="credential-input"
+                    />
+                    <button
+                      @click="copyToClipboard(credenciales.estudiante.email)"
+                      class="btn-copy"
+                      title="Copiar"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <div class="credential-item">
+                  <label class="credential-label">Contraseña Inicial:</label>
+                  <div class="credential-value-container">
+                    <input
+                      type="text"
+                      :value="credenciales.estudiante.password"
+                      readonly
+                      class="credential-input"
+                    />
+                    <button
+                      @click="copyToClipboard(credenciales.estudiante.password)"
+                      class="btn-copy"
+                      title="Copiar"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <div class="credential-note">
+                  <strong>Nota:</strong> El estudiante puede ver sus notas, asistencia, horarios y tareas.
+                </div>
+              </div>
+            </div>
+
+            <div class="credentials-footer">
+              <div class="footer-icon">🔒</div>
+              <div class="footer-content">
+                <strong>Seguridad:</strong> Por favor, indique al padre y estudiante que cambien
+                su contraseña en su primer inicio de sesión.
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button @click="showCredencialesModal = false" class="btn btn-primary">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -285,6 +434,11 @@ const nuevoEstado = ref('')
 const observaciones = ref('')
 const updating = ref(false)
 const updateError = ref(null)
+
+// Modal de credenciales
+const showCredencialesModal = ref(false)
+const credenciales = ref(null)
+const loadingCredenciales = ref(false)
 
 const loadEnrollment = async () => {
   loading.value = true
@@ -406,6 +560,30 @@ const formatDateTime = (datetime) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const mostrarCredenciales = async () => {
+  loadingCredenciales.value = true
+  try {
+    const response = await enrollmentService.getCredenciales(route.params.id)
+    credenciales.value = response.data.data
+    showCredencialesModal.value = true
+  } catch (err) {
+    console.error('Error al obtener credenciales:', err)
+    alert('Error al obtener credenciales de acceso')
+  } finally {
+    loadingCredenciales.value = false
+  }
+}
+
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    alert('Copiado al portapapeles')
+  } catch (err) {
+    console.error('Error al copiar:', err)
+    alert('No se pudo copiar al portapapeles')
+  }
 }
 
 onMounted(() => {
@@ -886,5 +1064,216 @@ onMounted(() => {
     gap: 1rem;
     align-items: flex-start;
   }
+}
+
+/* Botón de acción info */
+.action-btn-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 1px solid #667eea;
+}
+
+.action-btn-info:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Modal de credenciales */
+.modal-large {
+  max-width: 700px;
+}
+
+.modal-header-custom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-title-custom {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.modal-loading {
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.modal-body-custom {
+  padding: 1.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.credentials-info-banner {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.credentials-info-banner p {
+  margin: 0;
+  color: #1e40af;
+  line-height: 1.6;
+}
+
+.credential-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.credential-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.credential-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.credential-badge {
+  padding: 0.25rem 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.credential-badge-student {
+  background: #10b981;
+}
+
+.credential-body {
+  padding: 1.5rem;
+}
+
+.credential-item {
+  margin-bottom: 1rem;
+}
+
+.credential-item:last-of-type {
+  margin-bottom: 1.5rem;
+}
+
+.credential-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.credential-value-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.credential-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  background: #f9fafb;
+}
+
+.credential-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.btn-copy {
+  padding: 0.75rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.btn-copy:hover {
+  background: #e5e7eb;
+  border-color: #3b82f6;
+}
+
+.btn-copy:active {
+  transform: scale(0.95);
+}
+
+.credential-note {
+  padding: 1rem;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #92400e;
+  line-height: 1.6;
+}
+
+.credentials-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  border-radius: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.footer-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.footer-content {
+  color: #991b1b;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 </style>

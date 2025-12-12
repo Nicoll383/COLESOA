@@ -40,4 +40,7 @@ router.get('/:id/contrato', EnrollmentController.generarContrato);
 // Generar comprobante en PDF
 router.get('/:id/comprobante', EnrollmentController.generarComprobante);
 
+// Obtener credenciales de acceso
+router.get('/:id/credenciales', secretariaOrAdmin, EnrollmentController.getCredenciales);
+
 module.exports = router;

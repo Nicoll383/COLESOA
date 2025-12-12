@@ -68,5 +68,10 @@ export default {
     return api.get(`/enrollments/${id}/comprobante`, {
       responseType: 'blob'
     })
+  },
+
+  // Obtener credenciales de acceso
+  getCredenciales(id) {
+    return api.get(`/enrollments/${id}/credenciales`)
   }
 }

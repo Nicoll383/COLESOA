@@ -565,6 +565,88 @@ class EnrollmentController {
       });
     }
   }
+
+  // Obtener credenciales de acceso del padre y estudiante
+  static async getCredenciales(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Obtener la matrícula
+      const enrollment = await Enrollment.findById(id);
+
+      if (!enrollment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Matrícula no encontrada'
+        });
+      }
+
+      // 2. Obtener información del estudiante
+      const student = await Student.findById(enrollment.estudiante_id);
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Estudiante no encontrado'
+        });
+      }
+
+      // 3. Buscar usuario padre
+      let padreUser = await User.findByEmail(student.apoderado_email);
+
+      if (!padreUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario padre no encontrado. La matrícula debe ser confirmada primero.'
+        });
+      }
+
+      // 4. Buscar usuario estudiante
+      const estudianteEmail = student.email || `${student.dni}@estudiante.colesoa.edu.pe`;
+      let estudianteUser = await User.findByEmail(estudianteEmail);
+
+      if (!estudianteUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario estudiante no encontrado. La matrícula debe ser confirmada primero.'
+        });
+      }
+
+      // 5. Generar nuevas contraseñas temporales
+      const padrePassword = emailService.constructor.generarPassword();
+      const estudiantePassword = emailService.constructor.generarPassword();
+
+      // 6. Actualizar contraseñas en la base de datos
+      await User.changePassword(padreUser.id, padrePassword);
+      await User.changePassword(estudianteUser.id, estudiantePassword);
+
+      // 7. Retornar credenciales
+      res.json({
+        success: true,
+        message: 'Credenciales generadas exitosamente',
+        data: {
+          padre: {
+            email: padreUser.email,
+            password: padrePassword,
+            nombre: `${padreUser.nombre} ${padreUser.apellido}`
+          },
+          estudiante: {
+            email: estudianteUser.email,
+            password: estudiantePassword,
+            nombre: `${estudianteUser.nombre} ${estudianteUser.apellido}`
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error al obtener credenciales:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener credenciales',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = EnrollmentController;
