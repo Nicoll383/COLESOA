@@ -420,6 +420,89 @@ class PadreController {
       connection.release();
     }
   }
+
+  // ========== GESTIÓN DE ASISTENCIA ==========
+
+  // Obtener asistencias de un hijo
+  static async getAsistenciasHijo(req, res) {
+    const connection = await db.getConnection();
+
+    try {
+      const userId = req.user.id;
+      const { estudianteId } = req.params;
+      const { mes, anio } = req.query;
+
+      // Verificar que el estudiante sea hijo del padre
+      const [verificacion] = await connection.execute(
+        `SELECT e.id, e.nombres, e.apellidos, m.id as matricula_id
+         FROM estudiantes e
+         INNER JOIN apoderados a ON e.id = a.estudiante_id
+         LEFT JOIN matriculas m ON e.id = m.estudiante_id
+           AND m.año_escolar = YEAR(NOW())
+         WHERE a.usuario_id = ? AND e.id = ?`,
+        [userId, estudianteId]
+      );
+
+      if (verificacion.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para ver la asistencia de este estudiante'
+        });
+      }
+
+      const estudiante = verificacion[0];
+
+      if (!estudiante.matricula_id) {
+        return res.json({
+          success: true,
+          data: [],
+          mensaje: 'El estudiante no tiene matrícula activa para este año escolar'
+        });
+      }
+
+      // Construir filtros de fecha
+      let whereClause = 'WHERE a.estudiante_id = ?';
+      let params = [estudianteId];
+
+      if (mes && anio) {
+        whereClause += ' AND MONTH(a.fecha) = ? AND YEAR(a.fecha) = ?';
+        params.push(parseInt(mes), parseInt(anio));
+      } else if (anio) {
+        whereClause += ' AND YEAR(a.fecha) = ?';
+        params.push(parseInt(anio));
+      }
+
+      // Obtener asistencias
+      const [asistencias] = await connection.execute(
+        `SELECT
+          a.id,
+          a.fecha,
+          a.estado,
+          a.hora_entrada,
+          a.hora_salida,
+          a.observaciones,
+          a.created_at
+         FROM asistencias a
+         ${whereClause}
+         ORDER BY a.fecha DESC`,
+        params
+      );
+
+      res.json({
+        success: true,
+        data: asistencias
+      });
+    } catch (error) {
+      console.error('Error al obtener asistencias:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener asistencias',
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  }
 }
 
 module.exports = PadreController;

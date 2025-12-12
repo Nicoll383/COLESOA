@@ -52,6 +52,9 @@ router.post('/cuotas/:cuotaId/pagar', PadreController.registrarPagoCuota);
 // ========== RUTAS DE DOCUMENTOS ==========
 router.get('/hijos/:estudianteId/documentos', PadreController.getDocumentosHijo);
 
+// ========== RUTAS DE ASISTENCIA ==========
+router.get('/hijos/:estudianteId/asistencias', PadreController.getAsistenciasHijo);
+
 // Middleware de error handler para multer
 const multerErrorHandler = (err, req, res, next) => {
   console.error('Error en multer:', err);

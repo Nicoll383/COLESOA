@@ -191,8 +191,7 @@ const verDocumentos = (hijoId) => {
 }
 
 const verAsistencia = (hijoId) => {
-  // TODO: Implementar vista de asistencia
-  alert('Vista de asistencia en desarrollo')
+  router.push({ name: 'PadreAsistencia' })
 }
 
 const verNotas = (hijoId) => {
