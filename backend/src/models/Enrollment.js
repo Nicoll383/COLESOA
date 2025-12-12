@@ -139,13 +139,108 @@ class Enrollment {
         ]
       );
 
+      // 11. Crear usuarios automáticamente para padre y estudiante
+      const User = require('./User');
+      const bcrypt = require('bcryptjs');
+      const emailService = require('../services/email.service');
+
+      let padreCredenciales = null;
+      let estudianteCredenciales = null;
+
+      // Crear usuario PADRE
+      try {
+        const [padreExistente] = await connection.execute(
+          'SELECT id, email FROM usuarios WHERE email = ? OR dni = ?',
+          [student.apoderado_email, student.apoderado_dni]
+        );
+
+        if (padreExistente.length === 0) {
+          // Generar credenciales
+          const padrePassword = emailService.constructor.generarPassword();
+          const padreUsername = emailService.constructor.generarUsuario(
+            student.apoderado_nombre,
+            student.apoderado_apellido,
+            student.apoderado_dni
+          );
+
+          await connection.execute(
+            `INSERT INTO usuarios (email, password, nombre, apellido, username, rol, dni, telefono, estado, created_at)
+             VALUES (?, ?, ?, ?, ?, 'padre', ?, ?, 'activo', NOW())`,
+            [
+              student.apoderado_email,
+              await bcrypt.hash(padrePassword, 10),
+              student.apoderado_nombre,
+              student.apoderado_apellido,
+              padreUsername,
+              student.apoderado_dni,
+              student.apoderado_telefono
+            ]
+          );
+
+          padreCredenciales = {
+            email: student.apoderado_email,
+            password: padrePassword,
+            nombre: `${student.apoderado_nombre} ${student.apoderado_apellido}`
+          };
+        }
+      } catch (error) {
+        console.error('Error al crear usuario padre:', error);
+        // No fallamos la matrícula si falla la creación del usuario
+      }
+
+      // Crear usuario ESTUDIANTE
+      try {
+        const estudianteEmail = student.email || `${student.dni}@estudiante.colesoa.edu.pe`;
+
+        const [estudianteExistente] = await connection.execute(
+          'SELECT id, email FROM usuarios WHERE email = ? OR dni = ?',
+          [estudianteEmail, student.dni]
+        );
+
+        if (estudianteExistente.length === 0) {
+          // Generar credenciales
+          const estudiantePassword = emailService.constructor.generarPassword();
+          const estudianteUsername = emailService.constructor.generarUsuario(
+            student.nombres,
+            student.apellidos,
+            student.dni
+          );
+
+          await connection.execute(
+            `INSERT INTO usuarios (email, password, nombre, apellido, username, rol, dni, estado, created_at)
+             VALUES (?, ?, ?, ?, ?, 'estudiante', ?, 'activo', NOW())`,
+            [
+              estudianteEmail,
+              await bcrypt.hash(estudiantePassword, 10),
+              student.nombres,
+              student.apellidos,
+              estudianteUsername,
+              student.dni
+            ]
+          );
+
+          estudianteCredenciales = {
+            email: estudianteEmail,
+            password: estudiantePassword,
+            nombre: `${student.nombres} ${student.apellidos}`
+          };
+        }
+      } catch (error) {
+        console.error('Error al crear usuario estudiante:', error);
+        // No fallamos la matrícula si falla la creación del usuario
+      }
+
       await connection.commit();
 
       return {
         id: matriculaId,
         codigo_matricula,
         monto_total,
-        vacantes_restantes: seccion.capacidad - vacantesOcupadas - 1
+        vacantes_restantes: seccion.capacidad - vacantesOcupadas - 1,
+        credenciales: {
+          padre: padreCredenciales,
+          estudiante: estudianteCredenciales
+        }
       };
 
     } catch (error) {
