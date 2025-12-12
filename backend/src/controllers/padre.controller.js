@@ -316,16 +316,18 @@ class PadreController {
       const [documentos] = await connection.execute(
         `SELECT
           de.id,
-          de.tipo_documento,
+          de.documento_requerido_id,
           de.nombre_archivo,
-          de.ruta_archivo as archivo_url,
-          de.created_at as fecha_subida,
-          de.fecha_verificacion as fecha_revision,
+          de.archivo_url,
+          de.fecha_subida,
+          de.fecha_revision,
           de.observaciones,
-          de.estado_verificacion as estado
+          de.estado,
+          dr.nombre as tipo_documento
          FROM documentos_estudiante de
+         LEFT JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
          WHERE de.estudiante_id = ?
-         ORDER BY de.created_at DESC`,
+         ORDER BY de.id DESC`,
         [estudianteId]
       );
 
