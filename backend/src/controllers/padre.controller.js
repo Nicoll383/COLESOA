@@ -59,9 +59,9 @@ class PadreController {
           const [docsStats] = await connection.execute(
             `SELECT
               COUNT(*) as total_documentos,
-              SUM(CASE WHEN estado_verificacion = 'pendiente' THEN 1 ELSE 0 END) as documentos_pendientes,
-              SUM(CASE WHEN estado_verificacion = 'aprobado' THEN 1 ELSE 0 END) as documentos_aprobados,
-              SUM(CASE WHEN estado_verificacion = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
+              SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as documentos_pendientes,
+              SUM(CASE WHEN estado = 'aprobado' THEN 1 ELSE 0 END) as documentos_aprobados,
+              SUM(CASE WHEN estado = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
             FROM documentos_estudiante
             WHERE estudiante_id = ?`,
             [hijo.id]
@@ -320,9 +320,9 @@ class PadreController {
           de.nombre_archivo,
           de.ruta_archivo as archivo_url,
           de.created_at as fecha_subida,
-          de.fecha_verificacion as fecha_revision,
+          de.fecha_revision,
           de.observaciones,
-          de.estado_verificacion as estado
+          de.estado
          FROM documentos_estudiante de
          WHERE de.estudiante_id = ?
          ORDER BY de.created_at DESC`,
@@ -388,7 +388,7 @@ class PadreController {
         `UPDATE documentos_estudiante
          SET ruta_archivo = ?,
              nombre_archivo = ?,
-             estado_verificacion = 'pendiente',
+             estado = 'pendiente',
              updated_at = NOW()
          WHERE id = ?`,
         [archivo_url, nombre_archivo, documentoId]
