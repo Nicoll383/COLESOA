@@ -47,8 +47,8 @@ class PadreController {
             `SELECT
               COUNT(*) as total_cuotas,
               SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as cuotas_pendientes,
-              SUM(CASE WHEN estado = 'vencido' THEN 1 ELSE 0 END) as cuotas_vencidas,
-              SUM(CASE WHEN estado = 'pendiente' OR estado = 'vencido' THEN monto ELSE 0 END) as monto_pendiente,
+              SUM(CASE WHEN estado = 'anulado' THEN 1 ELSE 0 END) as cuotas_anuladas,
+              SUM(CASE WHEN estado = 'pendiente' THEN monto ELSE 0 END) as monto_pendiente,
               SUM(CASE WHEN estado = 'completado' THEN monto ELSE 0 END) as monto_pagado
             FROM pagos
             WHERE matricula_id = ?`,
@@ -68,7 +68,7 @@ class PadreController {
           );
 
           hijo.cuotas_pendientes = cuotasStats[0]?.cuotas_pendientes || 0;
-          hijo.cuotas_vencidas = cuotasStats[0]?.cuotas_vencidas || 0;
+          hijo.cuotas_anuladas = cuotasStats[0]?.cuotas_anuladas || 0;
           hijo.monto_pendiente = parseFloat(cuotasStats[0]?.monto_pendiente || 0);
           hijo.monto_pagado = parseFloat(cuotasStats[0]?.monto_pagado || 0);
           hijo.total_cuotas = cuotasStats[0]?.total_cuotas || 0;
@@ -147,9 +147,6 @@ class PadreController {
           p.tipo_pago,
           p.concepto,
           p.monto,
-          p.mes,
-          p.año,
-          p.fecha_vencimiento,
           p.fecha_pago,
           p.metodo_pago,
           p.numero_operacion,
@@ -158,7 +155,7 @@ class PadreController {
           p.created_at
         FROM pagos p
         WHERE p.matricula_id = ?
-        ORDER BY p.año ASC, p.mes ASC`,
+        ORDER BY p.fecha_pago DESC`,
         [estudiante.matricula_id]
       );
 
@@ -166,11 +163,11 @@ class PadreController {
       const resumen = {
         total_cuotas: cuotas.length,
         pendientes: cuotas.filter(c => c.estado === 'pendiente').length,
-        vencidas: cuotas.filter(c => c.estado === 'vencido').length,
-        pagadas: cuotas.filter(c => c.estado === 'completado').length,
+        anuladas: cuotas.filter(c => c.estado === 'anulado').length,
+        completadas: cuotas.filter(c => c.estado === 'completado').length,
         monto_total: cuotas.reduce((sum, c) => sum + parseFloat(c.monto), 0),
         monto_pendiente: cuotas
-          .filter(c => c.estado === 'pendiente' || c.estado === 'vencido')
+          .filter(c => c.estado === 'pendiente')
           .reduce((sum, c) => sum + parseFloat(c.monto), 0),
         monto_pagado: cuotas
           .filter(c => c.estado === 'completado')
