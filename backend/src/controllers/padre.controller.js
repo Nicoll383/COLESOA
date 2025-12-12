@@ -321,7 +321,7 @@ class PadreController {
           de.ruta_archivo as archivo_url,
           de.created_at as fecha_subida,
           de.observaciones,
-          de.estado
+          de.estado as estado_verificacion
          FROM documentos_estudiante de
          WHERE de.estudiante_id = ?
          ORDER BY de.created_at DESC`,
@@ -330,10 +330,7 @@ class PadreController {
 
       res.json({
         success: true,
-        data: {
-          estudiante: verificacion[0],
-          documentos: documentos
-        }
+        data: documentos
       });
     } catch (error) {
       console.error('Error al obtener documentos:', error);
