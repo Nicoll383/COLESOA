@@ -22,8 +22,21 @@ class DocumentoService {
    * @returns {Promise} - Respuesta del servidor
    */
   async subirDocumento(documentoId, file, estudianteId = null) {
+    console.log('=== DOCUMENTO SERVICE DEBUG ===')
+    console.log('documentoId:', documentoId)
+    console.log('file:', file)
+    console.log('file.name:', file?.name)
+    console.log('file.size:', file?.size)
+    console.log('file.type:', file?.type)
+    console.log('estudianteId:', estudianteId)
+
     const formData = new FormData()
     formData.append('file', file)
+
+    console.log('FormData creado:', formData)
+    console.log('FormData instanceof FormData:', formData instanceof FormData)
+    console.log('FormData.get("file"):', formData.get('file'))
+    console.log('==============================')
 
     // Si no se proporciona estudianteId, intentamos obtenerlo del documento
     // Por ahora usamos un endpoint simplificado que solo necesita el documentoId

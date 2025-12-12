@@ -14,13 +14,24 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    console.log('=== AXIOS INTERCEPTOR DEBUG ===')
+    console.log('URL:', config.url)
+    console.log('Method:', config.method)
+    console.log('config.data:', config.data)
+    console.log('config.data instanceof FormData:', config.data instanceof FormData)
+
     // Si es FormData, eliminar cualquier Content-Type para que axios lo configure automáticamente
     if (config.data instanceof FormData) {
+      console.log('✓ Detectado FormData - eliminando Content-Type header')
       delete config.headers['Content-Type']
     } else {
       // Solo configurar Content-Type como JSON si NO es FormData
+      console.log('✗ NO es FormData - configurando Content-Type como JSON')
       config.headers['Content-Type'] = 'application/json'
     }
+
+    console.log('Headers finales:', config.headers)
+    console.log('==============================')
 
     return config
   },
