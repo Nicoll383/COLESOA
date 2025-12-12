@@ -16,11 +16,22 @@ class Payment {
     // Generar código de pago único
     const codigo_pago = await this.generarCodigoPago();
 
+    // Auto-aprobar pagos en efectivo, dejar pendientes los demás
+    const estado = metodo_pago === 'efectivo' ? 'completado' : 'pendiente';
+
     const [result] = await pool.execute(
       `INSERT INTO pagos (codigo_pago, matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones, estado, fecha_pago)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'completado', NOW())`,
-      [codigo_pago, matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [codigo_pago, matricula_id, concepto, monto, metodo_pago, numero_operacion, observaciones, estado]
     );
+
+    // Si el pago es en efectivo, actualizar el estado de la matrícula automáticamente
+    if (metodo_pago === 'efectivo') {
+      await pool.execute(
+        `UPDATE matriculas SET estado = 'completada' WHERE id = ?`,
+        [matricula_id]
+      );
+    }
 
     return await this.findById(result.insertId);
   }
@@ -114,6 +125,12 @@ class Payment {
   static async updateEstado(id, estado, observaciones = null) {
     const pool = getPool();
 
+    // Obtener el pago antes de actualizarlo
+    const pago = await this.findById(id);
+    if (!pago) {
+      throw new Error('Pago no encontrado');
+    }
+
     const [result] = await pool.execute(
       `UPDATE pagos
        SET estado = ?,
@@ -124,6 +141,14 @@ class Payment {
 
     if (result.affectedRows === 0) {
       throw new Error('Pago no encontrado');
+    }
+
+    // Si el pago se aprueba (estado completado), actualizar también el estado de la matrícula
+    if (estado === 'completado' && pago.matricula_id) {
+      await pool.execute(
+        `UPDATE matriculas SET estado = 'completada' WHERE id = ?`,
+        [pago.matricula_id]
+      );
     }
 
     return await this.findById(id);

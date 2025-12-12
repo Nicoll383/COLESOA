@@ -987,12 +987,8 @@ const downloadCarnet = async () => {
 
 // Métodos de pago disponibles
 const paymentMethods = [
-  { value: 'efectivo', label: 'Efectivo', icon: '💵' },
-  { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
-  { value: 'transferencia', label: 'Transferencia', icon: '🏦' },
-  { value: 'deposito', label: 'Depósito', icon: '🏧' },
-  { value: 'yape', label: 'Yape', icon: '📱' },
-  { value: 'plin', label: 'Plin', icon: '💸' }
+  { value: 'efectivo', label: 'Efectivo', icon: '💵', description: 'Pago inmediato - Aprobación automática' },
+  { value: 'transferencia', label: 'Transferencia Bancaria', icon: '🏦', description: 'Requiere aprobación de finanzas' }
 ]
 
 // Cargar documentos requeridos
