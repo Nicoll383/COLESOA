@@ -51,6 +51,38 @@ router.post('/cuotas/:cuotaId/pagar', PadreController.registrarPagoCuota);
 
 // ========== RUTAS DE DOCUMENTOS ==========
 router.get('/hijos/:estudianteId/documentos', PadreController.getDocumentosHijo);
-router.post('/hijos/:estudianteId/documentos/:documentoId/upload', upload.single('file'), PadreController.subirDocumento);
+
+// Middleware de error handler para multer
+const multerErrorHandler = (err, req, res, next) => {
+  console.error('Error en multer:', err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: `Error de multer: ${err.message}`,
+      code: err.code
+    });
+  }
+  if (err) {
+    return res.status(500).json({
+      success: false,
+      message: `Error al procesar archivo: ${err.message}`
+    });
+  }
+  next();
+};
+
+router.post(
+  '/hijos/:estudianteId/documentos/:documentoId/upload',
+  (req, res, next) => {
+    console.log('=== ANTES DE MULTER ===');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Content-Length:', req.headers['content-length']);
+    console.log('=======================');
+    next();
+  },
+  upload.single('file'),
+  multerErrorHandler,
+  PadreController.subirDocumento
+);
 
 module.exports = router;
