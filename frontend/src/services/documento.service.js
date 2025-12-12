@@ -29,18 +29,11 @@ class DocumentoService {
     // Por ahora usamos un endpoint simplificado que solo necesita el documentoId
     // TODO: Ajustar backend para aceptar /documentos/:documentoId/upload
     if (estudianteId) {
-      return api.post(`/padre/hijos/${estudianteId}/documentos/${documentoId}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      // NO configurar Content-Type manualmente, axios lo hace automáticamente con FormData
+      return api.post(`/padre/hijos/${estudianteId}/documentos/${documentoId}/upload`, formData)
     } else {
       // Endpoint alternativo si no tenemos estudianteId
-      return api.post(`/documentos/${documentoId}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      return api.post(`/documentos/${documentoId}/upload`, formData)
     }
   }
 

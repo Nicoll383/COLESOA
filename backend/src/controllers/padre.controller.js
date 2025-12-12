@@ -387,7 +387,7 @@ class PadreController {
         `UPDATE documentos_estudiante
          SET ruta_archivo = ?,
              nombre_archivo = ?,
-             estado = 'pendiente',
+             estado = 'enviado',
              updated_at = NOW()
          WHERE id = ?`,
         [archivo_url, nombre_archivo, documentoId]
@@ -400,7 +400,7 @@ class PadreController {
           id: documentoId,
           archivo_url,
           nombre_archivo,
-          estado: 'pendiente'
+          estado: 'enviado'
         }
       });
     } catch (error) {
