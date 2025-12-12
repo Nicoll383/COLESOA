@@ -7,18 +7,21 @@ class User {
    */
   static async create(userData) {
     const pool = getPool();
-    const { email, password, nombre, apellido, rol, telefono, dni } = userData;
+    const { email, password, nombre, apellido, rol, telefono, dni, username, estado = 'activo' } = userData;
 
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash de la contraseña si no está hasheada
+    const hashedPassword = password.startsWith('$2a$') || password.startsWith('$2b$')
+      ? password
+      : await bcrypt.hash(password, 10);
 
     const [result] = await pool.execute(
-      `INSERT INTO usuarios (email, password, nombre, apellido, rol, telefono, dni, estado, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'activo', NOW())`,
-      [email, hashedPassword, nombre, apellido, rol, telefono || null, dni || null]
+      `INSERT INTO usuarios (email, password, nombre, apellido, rol, telefono, dni, username, estado, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [email, hashedPassword, nombre, apellido, rol, telefono || null, dni || null, username || email, estado]
     );
 
-    return result.insertId;
+    // Retornar el usuario completo recién creado
+    return await this.findById(result.insertId);
   }
 
   /**

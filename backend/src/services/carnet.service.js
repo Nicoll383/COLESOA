@@ -1,6 +1,7 @@
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
+const bwipjs = require('bwip-js');
 
 class CarnetService {
   /**
@@ -133,8 +134,32 @@ class CarnetService {
       }
     }
 
+    // Generar código de barras
+    try {
+      const barcodeBuffer = bwipjs.toBuffer({
+        bcid: 'code128',       // Tipo de código de barras
+        text: student.codigo_estudiante || student.dni, // Texto a codificar
+        scale: 2,              // Escala
+        height: 8,             // Altura en milímetros
+        includetext: true,     // Incluir texto debajo
+        textxalign: 'center',  // Alineación del texto
+        textsize: 8            // Tamaño del texto
+      });
+
+      // Insertar código de barras en el carnet
+      const barcodeY = 108;
+      doc.image(barcodeBuffer, 80, barcodeY, {
+        width: 80,
+        height: 20,
+        align: 'center'
+      });
+    } catch (error) {
+      console.error('Error al generar código de barras:', error);
+      // Continuar sin código de barras si hay error
+    }
+
     // Año escolar en la parte inferior
-    currentY = 120;
+    currentY = 130;
     const añoActual = new Date().getFullYear();
 
     doc.fontSize(7)

@@ -91,14 +91,12 @@ class EnrollmentController {
           student.apoderado_dni
         );
 
-        const hashedPassword = await bcrypt.hash(padrePassword, 10);
-
         padreUser = await User.create({
           nombre: student.apoderado_nombre,
           apellido: student.apoderado_apellido,
           email: student.apoderado_email,
           username: padreUsuario,
-          password: hashedPassword,
+          password: padrePassword,
           rol: 'padre',
           dni: student.apoderado_dni,
           telefono: student.apoderado_telefono,
@@ -124,14 +122,12 @@ class EnrollmentController {
           student.dni
         );
 
-        const hashedPassword = await bcrypt.hash(estudiantePassword, 10);
-
         estudianteUser = await User.create({
           nombre: student.nombre,
           apellido: student.apellido,
           email: estudianteEmail,
           username: estudianteUsuario,
-          password: hashedPassword,
+          password: estudiantePassword,
           rol: 'estudiante',
           dni: student.dni,
           estado: 'activo'
