@@ -30,8 +30,9 @@ class PadreController {
         FROM estudiantes e
         INNER JOIN apoderados a ON e.id = a.estudiante_id
         LEFT JOIN matriculas m ON e.id = m.estudiante_id
-          AND m.año_escolar = (SELECT año_escolar FROM año_escolar_config WHERE estado = 'activo' LIMIT 1)
-        LEFT JOIN grados g ON m.grado_id = g.id
+          AND m.año_escolar = YEAR(NOW())
+        LEFT JOIN secciones sec ON m.seccion_id = sec.id
+        LEFT JOIN grados g ON sec.grado_id = g.id
         LEFT JOIN secciones s ON m.seccion_id = s.id
         WHERE a.usuario_id = ?
         ORDER BY e.apellidos, e.nombres`,
@@ -58,12 +59,12 @@ class PadreController {
           const [docsStats] = await connection.execute(
             `SELECT
               COUNT(*) as total_documentos,
-              SUM(CASE WHEN estado_verificacion = 'pendiente' THEN 1 ELSE 0 END) as documentos_pendientes,
-              SUM(CASE WHEN estado_verificacion = 'aprobado' THEN 1 ELSE 0 END) as documentos_aprobados,
-              SUM(CASE WHEN estado_verificacion = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
-            FROM documentos_estudiante
-            WHERE estudiante_id = ?`,
-            [hijo.id]
+              SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as documentos_pendientes,
+              SUM(CASE WHEN estado = 'aceptado' THEN 1 ELSE 0 END) as documentos_aprobados,
+              SUM(CASE WHEN estado = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
+            FROM documentos_estudiantes
+            WHERE matricula_id = ?`,
+            [hijo.matricula_id]
           );
 
           hijo.cuotas_pendientes = cuotasStats[0]?.cuotas_pendientes || 0;
@@ -109,7 +110,7 @@ class PadreController {
          FROM estudiantes e
          INNER JOIN apoderados a ON e.id = a.estudiante_id
          LEFT JOIN matriculas m ON e.id = m.estudiante_id
-           AND m.año_escolar = (SELECT año_escolar FROM año_escolar_config WHERE estado = 'activo' LIMIT 1)
+           AND m.año_escolar = YEAR(NOW())
          WHERE a.usuario_id = ? AND e.id = ?`,
         [userId, estudianteId]
       );
@@ -314,6 +315,26 @@ class PadreController {
         });
       }
 
+      // Obtener matrícula activa del estudiante
+      const [matriculas] = await connection.execute(
+        `SELECT m.id
+         FROM matriculas m
+         WHERE m.estudiante_id = ?
+         AND m.año_escolar = YEAR(NOW())
+         LIMIT 1`,
+        [estudianteId]
+      );
+
+      if (matriculas.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            estudiante: verificacion[0],
+            documentos: []
+          }
+        });
+      }
+
       // Obtener documentos del estudiante
       const [documentos] = await connection.execute(
         `SELECT
@@ -328,11 +349,11 @@ class PadreController {
           dr.descripcion,
           dr.obligatorio,
           dr.tipo_archivo
-         FROM documentos_estudiante de
+         FROM documentos_estudiantes de
          INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
-         WHERE de.estudiante_id = ?
+         WHERE de.matricula_id = ?
          ORDER BY dr.orden ASC`,
-        [estudianteId]
+        [matriculas[0].id]
       );
 
       res.json({
@@ -391,7 +412,7 @@ class PadreController {
       const nombre_archivo = file.originalname;
 
       await connection.execute(
-        `UPDATE documentos_estudiante
+        `UPDATE documentos_estudiantes
          SET archivo_url = ?,
              nombre_archivo = ?,
              estado = 'enviado',

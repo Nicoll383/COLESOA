@@ -26,13 +26,20 @@
           </div>
 
           <!-- Resultados de búsqueda -->
-          <div v-if="estudiante" class="student-card">
-            <div class="student-info">
-              <h3 class="student-name">{{ estudiante.nombres }} {{ estudiante.apellidos }}</h3>
-              <p class="student-detail"><strong>DNI:</strong> {{ estudiante.dni }}</p>
-              <p class="student-detail"><strong>Código:</strong> {{ estudiante.codigo_estudiante }}</p>
+          <div v-if="resultadosBusqueda.length > 0" class="search-results">
+            <h4 class="subsection-title">Resultados de búsqueda ({{ resultadosBusqueda.length }})</h4>
+            <div v-for="est in resultadosBusqueda" :key="est.id"
+                 class="student-card"
+                 :class="{ 'student-selected': estudiante?.id === est.id }"
+                 @click="seleccionarEstudiante(est)">
+              <div class="student-info">
+                <h3 class="student-name">{{ est.nombres }} {{ est.apellidos }}</h3>
+                <p class="student-detail"><strong>DNI:</strong> {{ est.dni }}</p>
+                <p class="student-detail"><strong>Código:</strong> {{ est.codigo_estudiante }}</p>
+              </div>
+              <span v-if="estudiante?.id === est.id" class="badge-selected">✓ Seleccionado</span>
             </div>
-            <button @click="limpiarBusqueda" class="btn btn-outline btn-sm">Limpiar</button>
+            <button @click="limpiarBusqueda" class="btn btn-outline btn-sm mt-3">Limpiar Búsqueda</button>
           </div>
 
           <div v-if="matriculas.length > 0" class="matriculas-list">
@@ -175,6 +182,7 @@ const router = useRouter()
 
 const searchTerm = ref('')
 const searching = ref(false)
+const resultadosBusqueda = ref([])
 const estudiante = ref(null)
 const matriculas = ref([])
 const matriculaSeleccionada = ref(null)
@@ -223,15 +231,9 @@ const buscarEstudiante = async () => {
     })
 
     if (response.data.data && response.data.data.length > 0) {
-      estudiante.value = response.data.data[0]
-
-      // Buscar matrículas del estudiante
-      const matriculasResp = await api.get('/enrollments', {
-        params: { estudiante_id: estudiante.value.id }
-      })
-
-      matriculas.value = matriculasResp.data.data || []
+      resultadosBusqueda.value = response.data.data
     } else {
+      resultadosBusqueda.value = []
       alert('No se encontró ningún estudiante con ese criterio')
     }
   } catch (error) {
@@ -239,6 +241,32 @@ const buscarEstudiante = async () => {
     alert('Error al buscar estudiante')
   } finally {
     searching.value = false
+  }
+}
+
+const seleccionarEstudiante = async (est) => {
+  estudiante.value = est
+
+  try {
+    // Buscar matrícula del año actual del estudiante
+    const currentYear = new Date().getFullYear()
+    const matriculasResp = await api.get('/enrollments', {
+      params: {
+        estudiante_id: est.id,
+        año_escolar: currentYear
+      }
+    })
+
+    // Filtrar solo la matrícula del año actual
+    const matriculasData = matriculasResp.data.data || []
+    matriculas.value = matriculasData.filter(m => m.año_escolar === currentYear)
+
+    if (matriculas.value.length === 0) {
+      alert(`El estudiante no tiene matrícula registrada para el año ${currentYear}`)
+    }
+  } catch (error) {
+    console.error('Error al obtener matrículas:', error)
+    alert('Error al obtener las matrículas del estudiante')
   }
 }
 
@@ -254,6 +282,7 @@ const seleccionarMatricula = (matricula) => {
 
 const limpiarBusqueda = () => {
   searchTerm.value = ''
+  resultadosBusqueda.value = []
   estudiante.value = null
   matriculas.value = []
   matriculaSeleccionada.value = null
@@ -421,6 +450,17 @@ const formatCVV = (event) => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Search Results */
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
 /* Student Card */
 .student-card {
   padding: 1.5rem;
@@ -430,6 +470,27 @@ const formatCVV = (event) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.student-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.student-selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+}
+
+.badge-selected {
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .student-info {
