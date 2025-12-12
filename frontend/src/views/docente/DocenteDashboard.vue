@@ -109,35 +109,49 @@ import api from '@/services/api'
 
 const router = useRouter()
 
+// DATOS MOCK - Solo visualización
 const stats = ref({
-  totalEstudiantes: 0,
-  cursosAsignados: 0,
-  notasPendientes: 0,
-  asistenciaPromedio: 0
+  totalEstudiantes: 125,
+  cursosAsignados: 3,
+  notasPendientes: 8,
+  asistenciaPromedio: 92
 })
 
-const secciones = ref([])
+const secciones = ref([
+  {
+    id: 1,
+    grado_nombre: '1° Primaria',
+    nombre: 'A',
+    estudiantes_count: 28,
+    aula: 'Aula 101',
+    turno: 'Mañana'
+  },
+  {
+    id: 2,
+    grado_nombre: '1° Primaria',
+    nombre: 'B',
+    estudiantes_count: 30,
+    aula: 'Aula 102',
+    turno: 'Mañana'
+  },
+  {
+    id: 3,
+    grado_nombre: '2° Primaria',
+    nombre: 'A',
+    estudiantes_count: 27,
+    aula: 'Aula 201',
+    turno: 'Tarde'
+  }
+])
 
 const loadStats = async () => {
-  try {
-    const response = await api.get('/docente/estadisticas')
-    if (response.data.success) {
-      stats.value = response.data.data
-    }
-  } catch (error) {
-    console.error('Error al cargar estadísticas:', error)
-  }
+  // Datos ya cargados en el ref inicial
+  console.log('Estadísticas cargadas (mock)')
 }
 
 const loadSecciones = async () => {
-  try {
-    const response = await api.get('/docente/secciones')
-    if (response.data.success) {
-      secciones.value = response.data.data
-    }
-  } catch (error) {
-    console.error('Error al cargar secciones:', error)
-  }
+  // Datos ya cargados en el ref inicial
+  console.log('Secciones cargadas (mock)')
 }
 
 onMounted(() => {

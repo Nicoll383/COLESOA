@@ -206,21 +206,45 @@ const clasesHoy = computed(() => {
   return horario.value.filter(clase => clase.dia === diaActual.value)
 })
 
+// DATOS MOCK - Solo visualización
 const cargarHorario = async () => {
   loading.value = true
   error.value = null
 
-  try {
-    const response = await api.get('/docente/horario')
+  // Simular carga de datos
+  setTimeout(() => {
+    horario.value = [
+      // Lunes
+      { dia: 'Lunes', hora: 1, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'clase' },
+      { dia: 'Lunes', hora: 2, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'clase' },
+      { dia: 'Lunes', hora: 4, curso: 'Física', grado: '4° Secundaria', seccion: 'B', aula: 'Lab-02', tipo: 'taller' },
+      { dia: 'Lunes', hora: 5, curso: 'Física', grado: '4° Secundaria', seccion: 'B', aula: 'Lab-02', tipo: 'taller' },
 
-    if (response.data.success) {
-      horario.value = response.data.data || []
-    }
-  } catch (err) {
-    error.value = err.response?.data?.message || 'Error al cargar el horario'
-  } finally {
+      // Martes
+      { dia: 'Martes', hora: 1, curso: 'Álgebra', grado: '5° Secundaria', seccion: 'A', aula: 'A-401', tipo: 'clase' },
+      { dia: 'Martes', hora: 2, curso: 'Álgebra', grado: '5° Secundaria', seccion: 'A', aula: 'A-401', tipo: 'clase' },
+      { dia: 'Martes', hora: 3, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'evaluacion', observaciones: 'Examen Bimestral' },
+      { dia: 'Martes', hora: 5, curso: 'Física', grado: '4° Secundaria', seccion: 'B', aula: 'A-305', tipo: 'clase' },
+
+      // Miércoles
+      { dia: 'Miércoles', hora: 2, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'B', aula: 'A-302', tipo: 'clase' },
+      { dia: 'Miércoles', hora: 3, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'B', aula: 'A-302', tipo: 'clase' },
+      { dia: 'Miércoles', hora: 4, curso: 'Álgebra', grado: '5° Secundaria', seccion: 'A', aula: 'A-401', tipo: 'clase' },
+      { dia: 'Miércoles', hora: 5, curso: 'Álgebra', grado: '5° Secundaria', seccion: 'A', aula: 'A-401', tipo: 'clase' },
+
+      // Jueves
+      { dia: 'Jueves', hora: 1, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'clase' },
+      { dia: 'Jueves', hora: 2, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'clase' },
+      { dia: 'Jueves', hora: 4, curso: 'Física', grado: '4° Secundaria', seccion: 'B', aula: 'Lab-02', tipo: 'taller' },
+      { dia: 'Jueves', hora: 6, curso: 'Tutoría', grado: '3° Secundaria', seccion: 'A', aula: 'A-301', tipo: 'clase' },
+
+      // Viernes
+      { dia: 'Viernes', hora: 2, curso: 'Álgebra', grado: '5° Secundaria', seccion: 'A', aula: 'A-401', tipo: 'clase' },
+      { dia: 'Viernes', hora: 3, curso: 'Matemáticas', grado: '3° Secundaria', seccion: 'B', aula: 'A-302', tipo: 'clase' },
+      { dia: 'Viernes', hora: 4, curso: 'Física', grado: '4° Secundaria', seccion: 'B', aula: 'A-305', tipo: 'clase' }
+    ]
     loading.value = false
-  }
+  }, 500)
 }
 
 const getClase = (dia, hora) => {
