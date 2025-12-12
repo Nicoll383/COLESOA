@@ -60,7 +60,7 @@ class DocumentoService {
    * @returns {Promise} - Lista de documentos para revisar
    */
   getDocumentosPendientesRevision() {
-    return api.get('/secretaria/documentos/pendientes')
+    return api.get('/documentos/pendientes-revision')
   }
 
   /**
@@ -71,7 +71,7 @@ class DocumentoService {
    * @returns {Promise} - Respuesta del servidor
    */
   cambiarEstado(documentoId, estado, observaciones = null) {
-    return api.put(`/secretaria/documentos/${documentoId}/estado`, {
+    return api.patch(`/documentos/${documentoId}/estado`, {
       estado,
       observaciones
     })
@@ -82,7 +82,7 @@ class DocumentoService {
    * @returns {Promise} - Estadísticas generales
    */
   getEstadisticas() {
-    return api.get('/secretaria/documentos/estadisticas')
+    return api.get('/documentos/estadisticas')
   }
 
   // ========== ENDPOINTS GENERALES ==========

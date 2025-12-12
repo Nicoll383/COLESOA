@@ -22,12 +22,12 @@ class Documento {
         de.estudiante_id,
         de.documento_requerido_id,
         de.matricula_id,
-        de.archivo_url,
+        de.ruta_archivo as archivo_url,
         de.nombre_archivo,
         de.estado,
         de.observaciones,
-        de.fecha_subida,
-        de.fecha_revision,
+        de.created_at as fecha_subida,
+        de.updated_at as fecha_revision,
         dr.nombre as documento_nombre,
         dr.descripcion as documento_descripcion,
         dr.obligatorio,
@@ -84,10 +84,10 @@ class Documento {
 
     const [result] = await pool.execute(
       `UPDATE documentos_estudiante
-       SET archivo_url = ?,
+       SET ruta_archivo = ?,
            nombre_archivo = ?,
            estado = 'enviado',
-           fecha_subida = NOW()
+           updated_at = NOW()
        WHERE id = ?`,
       [archivoUrl, nombreArchivo, documentoEstudianteId]
     );
@@ -124,7 +124,7 @@ class Documento {
        SET estado = ?,
            observaciones = ?,
            revisado_por = ?,
-           fecha_revision = NOW()
+           updated_at = NOW()
        WHERE id = ?`,
       [nuevoEstado, observaciones, usuarioId, documentoEstudianteId]
     );
@@ -226,9 +226,9 @@ class Documento {
       `SELECT
         de.id,
         de.estado,
-        de.fecha_subida,
-        de.fecha_revision,
-        de.archivo_url,
+        de.created_at as fecha_subida,
+        de.updated_at as fecha_revision,
+        de.ruta_archivo as archivo_url,
         de.nombre_archivo,
         de.observaciones,
         dr.nombre as nombre_documento,
@@ -251,7 +251,7 @@ class Documento {
            WHEN 'rechazado' THEN 3
            WHEN 'aceptado' THEN 4
          END,
-         de.fecha_subida ASC`
+         de.created_at ASC`
     );
 
     return rows;

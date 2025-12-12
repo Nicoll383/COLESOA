@@ -255,6 +255,15 @@ class Enrollment {
         // No fallamos la matrícula si falla la creación del usuario
       }
 
+      // 12. Inicializar documentos requeridos
+      try {
+        const Documento = require('./Documento');
+        await Documento.inicializarDocumentos(estudiante_id, matriculaId);
+      } catch (error) {
+        console.error('Error al inicializar documentos:', error);
+        // No fallamos la matrícula si falla la inicialización de documentos
+      }
+
       await connection.commit();
 
       return {
