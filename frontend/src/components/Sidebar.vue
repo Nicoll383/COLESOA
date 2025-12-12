@@ -84,7 +84,7 @@ const menuItems = computed(() => {
       { path: '/admin', label: 'Dashboard', icon: '📊' },
       { path: '/students', label: 'Estudiantes', icon: '👥' },
       { path: '/enrollments', label: 'Matrículas', icon: '📝' },
-      { path: '/payments', label: 'Pagos', icon: '💰' },
+      { path: '/docentes', label: 'Gestión de Docentes', icon: '👨‍🏫' },
       { path: '/secciones', label: 'Secciones', icon: '🏫' },
       { path: '/cursos', label: 'Cursos', icon: '📚' },
       { path: '/users', label: 'Usuarios', icon: '👤' },
@@ -95,6 +95,7 @@ const menuItems = computed(() => {
       { path: '/secretaria', label: 'Dashboard', icon: '📊' },
       { path: '/students', label: 'Estudiantes', icon: '👥' },
       { path: '/enrollments', label: 'Matrículas', icon: '📝' },
+      { path: '/docentes', label: 'Gestión de Docentes', icon: '👨‍🏫' },
       { path: '/secretaria/documentos', label: 'Validar Documentos', icon: '📄' },
       { path: '/secciones', label: 'Secciones', icon: '🏫' },
       { path: '/cursos', label: 'Cursos', icon: '📚' }

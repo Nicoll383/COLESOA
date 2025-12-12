@@ -68,6 +68,30 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'finanzas'] }
   },
   {
+    path: '/docentes',
+    name: 'DocentesList',
+    component: () => import('@/views/docentes/DocentesList.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/docentes/nuevo',
+    name: 'DocenteForm',
+    component: () => import('@/views/docentes/DocenteForm.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/docentes/:id',
+    name: 'DocenteDetail',
+    component: () => import('@/views/docentes/DocenteDetail.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
+    path: '/docentes/:id/editar',
+    name: 'DocenteEdit',
+    component: () => import('@/views/docentes/DocenteForm.vue'),
+    meta: { requiresAuth: true, roles: ['administrador', 'secretaria'] }
+  },
+  {
     path: '/docente',
     name: 'DocenteDashboard',
     component: () => import('@/views/docente/DocenteDashboard.vue'),

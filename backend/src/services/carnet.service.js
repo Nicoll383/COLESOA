@@ -10,7 +10,7 @@ class CarnetService {
    * @param {Object} enrollment - Datos de matrícula (opcional)
    * @returns {PDFDocument} - Documento PDF
    */
-  static generateCarnet(student, enrollment = null) {
+  static async generateCarnet(student, enrollment = null) {
     // Crear documento PDF en tamaño de tarjeta ID (3.375 x 2.125 pulgadas)
     const doc = new PDFDocument({
       size: [240, 150], // Tamaño aproximado de tarjeta ID en puntos
@@ -136,7 +136,7 @@ class CarnetService {
 
     // Generar código de barras
     try {
-      const barcodeBuffer = bwipjs.toBuffer({
+      const barcodeBuffer = await bwipjs.toBuffer({
         bcid: 'code128',       // Tipo de código de barras
         text: student.codigo_estudiante || student.dni, // Texto a codificar
         scale: 2,              // Escala
@@ -208,15 +208,19 @@ class CarnetService {
    * Generar carnet y retornar como buffer
    */
   static async generateCarnetBuffer(student, enrollment = null) {
-    return new Promise((resolve, reject) => {
-      const doc = this.generateCarnet(student, enrollment);
-      const chunks = [];
+    return new Promise(async (resolve, reject) => {
+      try {
+        const doc = await this.generateCarnet(student, enrollment);
+        const chunks = [];
 
-      doc.on('data', chunk => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
 
-      doc.end();
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 }
