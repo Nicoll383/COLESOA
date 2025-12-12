@@ -356,6 +356,12 @@ class PadreController {
       const { estudianteId, documentoId } = req.params;
       const file = req.file;
 
+      console.log('=== DEBUG UPLOAD ===');
+      console.log('req.file:', file);
+      console.log('req.body:', req.body);
+      console.log('Content-Type:', req.headers['content-type']);
+      console.log('===================');
+
       if (!file) {
         return res.status(400).json({
           success: false,
