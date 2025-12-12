@@ -63,8 +63,8 @@ class PadreController {
               SUM(CASE WHEN estado = 'aceptado' THEN 1 ELSE 0 END) as documentos_aprobados,
               SUM(CASE WHEN estado = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
             FROM documentos_estudiante
-            WHERE matricula_id = ?`,
-            [hijo.matricula_id]
+            WHERE estudiante_id = ?`,
+            [hijo.id]
           );
 
           hijo.cuotas_pendientes = cuotasStats[0]?.cuotas_pendientes || 0;
@@ -315,45 +315,21 @@ class PadreController {
         });
       }
 
-      // Obtener matrícula activa del estudiante
-      const [matriculas] = await connection.execute(
-        `SELECT m.id
-         FROM matriculas m
-         WHERE m.estudiante_id = ?
-         AND m.año_escolar = YEAR(NOW())
-         LIMIT 1`,
-        [estudianteId]
-      );
-
-      if (matriculas.length === 0) {
-        return res.json({
-          success: true,
-          data: {
-            estudiante: verificacion[0],
-            documentos: []
-          }
-        });
-      }
-
       // Obtener documentos del estudiante
       const [documentos] = await connection.execute(
         `SELECT
           de.id,
-          de.estado,
-          de.archivo_url,
+          de.tipo_documento,
           de.nombre_archivo,
+          de.ruta_archivo as archivo_url,
           de.fecha_subida,
-          de.fecha_revision,
+          de.fecha_verificacion as fecha_revision,
           de.observaciones,
-          dr.nombre,
-          dr.descripcion,
-          dr.obligatorio,
-          dr.tipo_archivo
+          de.estado_verificacion as estado
          FROM documentos_estudiante de
-         INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
-         WHERE de.matricula_id = ?
-         ORDER BY dr.orden ASC`,
-        [matriculas[0].id]
+         WHERE de.estudiante_id = ?
+         ORDER BY de.created_at DESC`,
+        [estudianteId]
       );
 
       res.json({

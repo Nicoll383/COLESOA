@@ -395,6 +395,11 @@ class Enrollment {
         params.push(`%${filters.estudiante_dni}%`);
       }
 
+      if (filters.estudiante_id) {
+        conditions.push('m.estudiante_id = ?');
+        params.push(filters.estudiante_id);
+      }
+
       if (conditions.length > 0) {
         query += ' WHERE ' + conditions.join(' AND ');
       }
