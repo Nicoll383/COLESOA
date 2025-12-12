@@ -326,25 +326,56 @@ const cargarAsistencia = async () => {
   loading.value = true
   error.value = null
 
-  try {
-    const response = await api.get(`/padre/hijos/${selectedHijoId.value}/asistencias`, {
-      params: {
-        mes: filters.value.mes,
-        anio: filters.value.anio
+  // DATOS MOCK - Solo para visualización
+  // Simular un pequeño delay como si fuera una llamada real
+  setTimeout(() => {
+    // Generar datos de ejemplo del mes actual
+    const asistenciasMock = generarAsistenciasMock(filters.value.mes, filters.value.anio)
+    asistencias.value = asistenciasMock
+    currentPage.value = 1
+    loading.value = false
+  }, 500)
+}
+
+// Función para generar datos de asistencia de ejemplo
+const generarAsistenciasMock = (mes, anio) => {
+  const diasEnMes = new Date(anio, mes, 0).getDate()
+  const asistenciasMock = []
+
+  for (let dia = 1; dia <= diasEnMes; dia++) {
+    const fecha = new Date(anio, mes - 1, dia)
+    const diaSemana = fecha.getDay()
+
+    // Solo días de semana (lunes a viernes)
+    if (diaSemana >= 1 && diaSemana <= 5) {
+      // Generar estado aleatorio con más probabilidad de presente
+      const random = Math.random()
+      let estado
+      if (random < 0.8) {
+        estado = 'presente'
+      } else if (random < 0.9) {
+        estado = 'tardanza'
+      } else if (random < 0.95) {
+        estado = 'justificado'
+      } else {
+        estado = 'ausente'
       }
-    })
 
-    if (response.data.success) {
-      asistencias.value = response.data.data || []
+      asistenciasMock.push({
+        id: dia,
+        fecha: fecha.toISOString().split('T')[0],
+        estado: estado,
+        hora_entrada: estado !== 'ausente' ? (estado === 'tardanza' ? '08:15:00' : '07:45:00') : null,
+        hora_salida: estado !== 'ausente' ? '13:00:00' : null,
+        observaciones: estado === 'tardanza' ? 'Llegó 15 minutos tarde' :
+                      estado === 'justificado' ? 'Cita médica - Justificante presentado' :
+                      estado === 'ausente' ? 'Falta sin justificar' : null,
+        created_at: fecha.toISOString()
+      })
     }
-
-    currentPage.value = 1 // Reset pagination
-    loading.value = false
-  } catch (err) {
-    error.value = err.response?.data?.message || 'Error al cargar asistencia'
-    asistencias.value = []
-    loading.value = false
   }
+
+  return asistenciasMock.reverse() // Más recientes primero
 }
 
 const filtrarAsistencias = () => {
