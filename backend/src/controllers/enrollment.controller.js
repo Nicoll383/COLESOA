@@ -77,13 +77,14 @@ class EnrollmentController {
       // 2. Inicializar documentos requeridos
       await Documento.inicializarDocumentos(enrollment.estudiante_id, enrollment.id);
 
-      // 3. Crear/obtener usuario padre
+      // 3. Crear/obtener usuario padre y generar credenciales
       let padreUser = await User.findByEmail(student.apoderado_email);
-      let padrePassword = null;
+      let padrePassword = emailService.constructor.generarPassword();
+      let esNuevoPadre = false;
 
       if (!padreUser) {
         // Crear usuario padre
-        padrePassword = emailService.constructor.generarPassword();
+        esNuevoPadre = true;
         const padreUsuario = emailService.constructor.generarUsuario(
           student.apoderado_nombre,
           student.apoderado_apellido,
@@ -103,15 +104,20 @@ class EnrollmentController {
           telefono: student.apoderado_telefono,
           estado: 'activo'
         });
+      } else {
+        // Actualizar contraseña del usuario existente
+        await User.changePassword(padreUser.id, padrePassword);
       }
 
-      // 4. Crear/obtener usuario estudiante
-      let estudianteUser = await User.findByEmail(student.email || `${student.dni}@estudiante.colesoa.edu.pe`);
-      let estudiantePassword = null;
+      // 4. Crear/obtener usuario estudiante y generar credenciales
+      const estudianteEmail = student.email || `${student.dni}@estudiante.colesoa.edu.pe`;
+      let estudianteUser = await User.findByEmail(estudianteEmail);
+      let estudiantePassword = emailService.constructor.generarPassword();
+      let esNuevoEstudiante = false;
 
       if (!estudianteUser) {
         // Crear usuario estudiante
-        estudiantePassword = emailService.constructor.generarPassword();
+        esNuevoEstudiante = true;
         const estudianteUsuario = emailService.constructor.generarUsuario(
           student.nombre,
           student.apellido,
@@ -123,34 +129,35 @@ class EnrollmentController {
         estudianteUser = await User.create({
           nombre: student.nombre,
           apellido: student.apellido,
-          email: student.email || `${student.dni}@estudiante.colesoa.edu.pe`,
+          email: estudianteEmail,
           username: estudianteUsuario,
           password: hashedPassword,
           rol: 'estudiante',
           dni: student.dni,
           estado: 'activo'
         });
+      } else {
+        // Actualizar contraseña del usuario existente
+        await User.changePassword(estudianteUser.id, estudiantePassword);
       }
 
-      // 5. Enviar email con credenciales (solo si son nuevas cuentas)
-      if (padrePassword && estudiantePassword) {
-        try {
-          await emailService.enviarCredencialesMatricula({
-            padreEmail: student.apoderado_email,
-            padreNombre: student.apoderado_nombre,
-            padreApellido: student.apoderado_apellido,
-            padreUsuario: padreUser.username,
-            padrePassword: padrePassword,
-            estudianteNombre: student.nombre,
-            estudianteApellido: student.apellido,
-            estudianteUsuario: estudianteUser.username,
-            estudiantePassword: estudiantePassword,
-            codigoMatricula: enrollment.codigo_matricula
-          });
-        } catch (emailError) {
-          console.error('Error al enviar email:', emailError);
-          // No falla la operación si el email falla
-        }
+      // 5. Enviar email con credenciales
+      try {
+        await emailService.enviarCredencialesMatricula({
+          padreEmail: student.apoderado_email,
+          padreNombre: student.apoderado_nombre,
+          padreApellido: student.apoderado_apellido,
+          padreUsuario: padreUser.username,
+          padrePassword: padrePassword,
+          estudianteNombre: student.nombre,
+          estudianteApellido: student.apellido,
+          estudianteUsuario: estudianteUser.username,
+          estudiantePassword: estudiantePassword,
+          codigoMatricula: enrollment.codigo_matricula
+        });
+      } catch (emailError) {
+        console.error('Error al enviar email:', emailError);
+        // No falla la operación si el email falla
       }
 
       // 6. Crear cuotas mensuales automáticamente
@@ -167,7 +174,19 @@ class EnrollmentController {
           documentosInicializados: true,
           cuotasCreadas: cuotas.length,
           cuotas: cuotas,
-          credencialesEnviadas: !!(padrePassword && estudiantePassword)
+          credencialesEnviadas: true,
+          credenciales: {
+            padre: {
+              email: padreUser.email,
+              password: padrePassword,
+              nombre: `${padreUser.nombre} ${padreUser.apellido}`
+            },
+            estudiante: {
+              email: estudianteUser.email,
+              password: estudiantePassword,
+              nombre: `${estudianteUser.nombre} ${estudianteUser.apellido}`
+            }
+          }
         }
       });
     } catch (error) {

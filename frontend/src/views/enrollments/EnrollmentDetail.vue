@@ -68,7 +68,7 @@
             </div>
           </button>
           <button
-            v-if="enrollment.estado === 'completada'"
+            v-if="enrollment.estado === 'confirmada' || enrollment.estado === 'completada'"
             @click="mostrarCredenciales"
             class="action-btn action-btn-info"
           >
@@ -282,9 +282,11 @@
             <div class="credentials-info-banner">
               <span class="info-icon">ℹ️</span>
               <p>
-                Estas son las credenciales de acceso para el sistema.
-                <strong>Compártalas solo con el padre/tutor del estudiante.</strong>
-                El padre y estudiante podrán cambiar su contraseña después del primer inicio de sesión.
+                Estas credenciales permiten al padre/tutor y estudiante acceder al sistema para:
+                <strong>subir documentos faltantes, pagar pensiones mensuales, consultar calificaciones y más.</strong>
+                <br>
+                <strong>⚠️ Importante:</strong> Compártalas solo con el padre/tutor del estudiante.
+                Ambos usuarios podrán cambiar su contraseña después del primer inicio de sesión.
               </p>
             </div>
 
@@ -500,7 +502,15 @@ const confirmarMatricula = async () => {
   confirmando.value = true
   try {
     const response = await enrollmentService.confirmar(route.params.id)
-    alert(response.data.message || 'Matrícula confirmada exitosamente')
+
+    // Mostrar las credenciales si están disponibles
+    if (response.data.data?.credenciales) {
+      credenciales.value = response.data.data.credenciales
+      showCredencialesModal.value = true
+    } else {
+      alert(response.data.message || 'Matrícula confirmada exitosamente')
+    }
+
     await loadEnrollment()
   } catch (err) {
     console.error('Error al confirmar matrícula:', err)
