@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { getPool } = require('../config/mysql');
 
 class EnrollmentController {
   // Crear nueva matrícula (preinscripción)
@@ -582,13 +583,29 @@ class EnrollmentController {
         });
       }
 
-      // Buscar usuario padre
-      let padreUser = await User.findByEmail(student.apoderado_email);
+      // Obtener el apoderado del estudiante desde la tabla apoderados
+      const pool = getPool();
+      const [apoderados] = await pool.execute(
+        'SELECT * FROM apoderados WHERE estudiante_id = ? ORDER BY id ASC LIMIT 1',
+        [enrollment.estudiante_id]
+      );
+
+      if (apoderados.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Apoderado no encontrado para este estudiante'
+        });
+      }
+
+      const apoderado = apoderados[0];
+
+      // Buscar usuario padre por email del apoderado
+      let padreUser = await User.findByEmail(apoderado.email);
 
       if (!padreUser) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario padre no encontrado'
+          message: 'Usuario padre no encontrado. Por favor, vuelva a crear la matrícula.'
         });
       }
 

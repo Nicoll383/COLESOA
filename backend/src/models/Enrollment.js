@@ -147,41 +147,66 @@ class Enrollment {
       let padreCredenciales = null;
       let estudianteCredenciales = null;
 
-      // Crear usuario PADRE
+      // Crear usuario PADRE - Obtener datos del apoderado desde la tabla apoderados
       try {
-        const [padreExistente] = await connection.execute(
-          'SELECT id, email FROM usuarios WHERE email = ? OR dni = ?',
-          [student.apoderado_email, student.apoderado_dni]
+        // Obtener el primer apoderado del estudiante
+        const [apoderados] = await connection.execute(
+          'SELECT * FROM apoderados WHERE estudiante_id = ? ORDER BY id ASC LIMIT 1',
+          [estudiante_id]
         );
 
-        if (padreExistente.length === 0) {
-          // Generar credenciales
-          const padrePassword = emailService.constructor.generarPassword();
-          const padreUsername = emailService.constructor.generarUsuario(
-            student.apoderado_nombre,
-            student.apoderado_apellido,
-            student.apoderado_dni
+        if (apoderados.length > 0) {
+          const apoderado = apoderados[0];
+
+          // Verificar si ya existe un usuario con ese email o DNI
+          const [padreExistente] = await connection.execute(
+            'SELECT id, email FROM usuarios WHERE email = ? OR dni = ?',
+            [apoderado.email, apoderado.dni]
           );
 
-          await connection.execute(
-            `INSERT INTO usuarios (email, password, nombre, apellido, username, rol, dni, telefono, estado, created_at)
-             VALUES (?, ?, ?, ?, ?, 'padre', ?, ?, 'activo', NOW())`,
-            [
-              student.apoderado_email,
-              await bcrypt.hash(padrePassword, 10),
-              student.apoderado_nombre,
-              student.apoderado_apellido,
-              padreUsername,
-              student.apoderado_dni,
-              student.apoderado_telefono
-            ]
-          );
+          let padreUserId = null;
 
-          padreCredenciales = {
-            email: student.apoderado_email,
-            password: padrePassword,
-            nombre: `${student.apoderado_nombre} ${student.apoderado_apellido}`
-          };
+          if (padreExistente.length === 0) {
+            // Generar credenciales
+            const padrePassword = emailService.constructor.generarPassword();
+            const padreUsername = emailService.constructor.generarUsuario(
+              apoderado.nombres,
+              apoderado.apellidos,
+              apoderado.dni
+            );
+
+            const [resultPadre] = await connection.execute(
+              `INSERT INTO usuarios (email, password, nombre, apellido, username, rol, dni, telefono, estado, created_at)
+               VALUES (?, ?, ?, ?, ?, 'padre', ?, ?, 'activo', NOW())`,
+              [
+                apoderado.email,
+                await bcrypt.hash(padrePassword, 10),
+                apoderado.nombres,
+                apoderado.apellidos,
+                padreUsername,
+                apoderado.dni,
+                apoderado.telefono
+              ]
+            );
+
+            padreUserId = resultPadre.insertId;
+
+            padreCredenciales = {
+              email: apoderado.email,
+              password: padrePassword,
+              nombre: `${apoderado.nombres} ${apoderado.apellidos}`
+            };
+          } else {
+            padreUserId = padreExistente[0].id;
+          }
+
+          // Actualizar el registro de apoderado con el usuario_id
+          if (padreUserId) {
+            await connection.execute(
+              'UPDATE apoderados SET usuario_id = ? WHERE id = ?',
+              [padreUserId, apoderado.id]
+            );
+          }
         }
       } catch (error) {
         console.error('Error al crear usuario padre:', error);
