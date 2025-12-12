@@ -96,6 +96,15 @@
               <span class="action-subtitle">Comprobante de pago</span>
             </div>
           </button>
+          <button @click="downloadCredenciales" :disabled="downloadingCredenciales" class="action-btn action-btn-warning">
+            <span class="action-icon">🔑</span>
+            <div class="action-content">
+              <span class="action-title">
+                {{ downloadingCredenciales ? 'Descargando...' : 'Descargar Credenciales' }}
+              </span>
+              <span class="action-subtitle">Acceso del padre al portal</span>
+            </div>
+          </button>
         </div>
 
         <!-- Main Content Grid -->
@@ -429,6 +438,7 @@ const error = ref(null)
 
 const downloadingContrato = ref(false)
 const downloadingComprobante = ref(false)
+const downloadingCredenciales = ref(false)
 const confirmando = ref(false)
 
 const showEstadoModal = ref(false)
@@ -491,6 +501,25 @@ const downloadComprobante = async () => {
     alert('Error al descargar el comprobante')
   } finally {
     downloadingComprobante.value = false
+  }
+}
+
+const downloadCredenciales = async () => {
+  downloadingCredenciales.value = true
+  try {
+    const response = await enrollmentService.descargarCredenciales(route.params.id)
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Credenciales_${enrollment.value.codigo_matricula}.pdf`
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Error al descargar credenciales:', err)
+    alert('Error al descargar las credenciales')
+  } finally {
+    downloadingCredenciales.value = false
   }
 }
 

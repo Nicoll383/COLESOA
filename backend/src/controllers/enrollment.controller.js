@@ -560,6 +560,158 @@ class EnrollmentController {
     }
   }
 
+  // Generar documento PDF con credenciales de acceso del padre
+  static async generarCredenciales(req, res) {
+    try {
+      const { id } = req.params;
+      const enrollment = await Enrollment.findById(id);
+
+      if (!enrollment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Matrícula no encontrada'
+        });
+      }
+
+      const student = await Student.findById(enrollment.estudiante_id);
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Estudiante no encontrado'
+        });
+      }
+
+      // Buscar usuario padre
+      let padreUser = await User.findByEmail(student.apoderado_email);
+
+      if (!padreUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario padre no encontrado'
+        });
+      }
+
+      // Generar nueva contraseña temporal para el padre
+      const padrePassword = emailService.constructor.generarPassword();
+      await User.changePassword(padreUser.id, padrePassword);
+
+      // Crear documento PDF
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+      // Configurar headers para descarga
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename=credenciales-${enrollment.codigo_matricula}.pdf`);
+
+      // Pipe el PDF directamente a la respuesta
+      doc.pipe(res);
+
+      // Encabezado
+      doc.fontSize(24)
+         .fillColor('#1e3a8a')
+         .text('COLEGIO SOA', { align: 'center' })
+         .fontSize(16)
+         .fillColor('#374151')
+         .text('CREDENCIALES DE ACCESO AL PORTAL', { align: 'center' })
+         .moveDown(2);
+
+      // Información de la matrícula
+      doc.fontSize(10)
+         .fillColor('#6b7280')
+         .text(`Código de Matrícula: ${enrollment.codigo_matricula}`, { align: 'right' })
+         .text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, { align: 'right' })
+         .moveDown(2);
+
+      // Credenciales del PADRE
+      doc.rect(50, doc.y, 500, 180)
+         .fillAndStroke('#eff6ff', '#3b82f6');
+
+      const boxY = doc.y;
+
+      doc.fontSize(16)
+         .fillColor('#1e40af')
+         .text('👨‍👩‍👦 ACCESO DEL PADRE/APODERADO', 70, boxY + 20);
+
+      doc.fontSize(12)
+         .fillColor('#374151')
+         .text(`Nombre: ${padreUser.nombre} ${padreUser.apellido}`, 70, boxY + 50)
+         .text(`DNI: ${padreUser.dni}`, 70, boxY + 70);
+
+      doc.fontSize(14)
+         .fillColor('#1e40af')
+         .text('Email/Usuario:', 70, boxY + 100);
+
+      doc.fontSize(12)
+         .fillColor('#000000')
+         .font('Courier-Bold')
+         .text(padreUser.email, 200, boxY + 100);
+
+      doc.font('Helvetica')
+         .fontSize(14)
+         .fillColor('#1e40af')
+         .text('Contraseña:', 70, boxY + 130);
+
+      doc.fontSize(14)
+         .fillColor('#dc2626')
+         .font('Courier-Bold')
+         .text(padrePassword, 200, boxY + 130);
+
+      doc.font('Helvetica');
+      doc.y = boxY + 200;
+
+      // Información importante
+      doc.fontSize(12)
+         .font('Helvetica-Bold')
+         .fillColor('#1e3a8a')
+         .text('⚠️ INFORMACIÓN IMPORTANTE', 50, doc.y + 20);
+
+      doc.fontSize(10)
+         .font('Helvetica')
+         .fillColor('#374151')
+         .text('• Guarde estas credenciales en un lugar seguro', 70, doc.y + 15)
+         .text('• Puede cambiar su contraseña después del primer inicio de sesión', 70, doc.y + 12)
+         .text('• El acceso le permite:', 70, doc.y + 12)
+         .text('   - Ver información de sus hijos matriculados', 90, doc.y + 12)
+         .text('   - Subir documentos faltantes', 90, doc.y + 12)
+         .text('   - Pagar cuotas mensuales', 90, doc.y + 12)
+         .text('   - Consultar calificaciones y asistencia', 90, doc.y + 12);
+
+      // URL de acceso
+      doc.fontSize(11)
+         .fillColor('#1e3a8a')
+         .text('Portal de Padres:', 50, doc.y + 25);
+
+      doc.fontSize(10)
+         .fillColor('#3b82f6')
+         .text('http://localhost:5173/login', 170, doc.y - 10);
+
+      // Pie de página
+      doc.fontSize(8)
+         .fillColor('#9ca3af')
+         .text('Este documento contiene información confidencial. No lo comparta con terceros.',
+               50,
+               doc.page.height - 80,
+               { align: 'center', width: 500 })
+         .text(`Generado el ${new Date().toLocaleString('es-PE')}`,
+               50,
+               doc.page.height - 60,
+               { align: 'center', width: 500 });
+
+      // Finalizar el PDF
+      doc.end();
+
+    } catch (error) {
+      console.error('Error al generar credenciales:', error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Error al generar credenciales',
+          error: error.message
+        });
+      }
+    }
+  }
+
   // Validar si un estudiante puede matricularse en un grado específico
   static async validarGrado(req, res) {
     try {

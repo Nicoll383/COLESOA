@@ -832,13 +832,13 @@ const createEnrollment = async () => {
     const response = await enrollmentService.create(enrollmentData)
     createdEnrollment.value = response.data.data
 
-    // Mostrar credenciales si se crearon usuarios nuevos
+    // Guardar credenciales si se crearon (se mostrarán después en el detalle)
     if (createdEnrollment.value.credenciales) {
       const { padre, estudiante } = createdEnrollment.value.credenciales
 
+      // Mostrar notificación breve
       if (padre || estudiante) {
-        // Mostrar modal con credenciales
-        mostrarCredencialesCreadas(padre, estudiante)
+        alert('✅ Matrícula creada exitosamente!\n\n🔑 Se han generado las credenciales de acceso.\nPodrá descargarlas al finalizar el proceso.')
       }
     }
 
@@ -852,33 +852,6 @@ const createEnrollment = async () => {
   } finally {
     creating.value = false
   }
-}
-
-const mostrarCredencialesCreadas = (padre, estudiante) => {
-  let mensaje = '✅ MATRÍCULA CREADA EXITOSAMENTE\n\n'
-  mensaje += '🔑 CREDENCIALES DE ACCESO GENERADAS:\n\n'
-
-  if (padre) {
-    mensaje += '👨‍👩‍👦 PADRE/APODERADO:\n'
-    mensaje += `Email: ${padre.email}\n`
-    mensaje += `Contraseña: ${padre.password}\n\n`
-  }
-
-  if (estudiante) {
-    mensaje += '👨‍🎓 ESTUDIANTE:\n'
-    mensaje += `Email: ${estudiante.email}\n`
-    mensaje += `Contraseña: ${estudiante.password}\n\n`
-  }
-
-  mensaje += '⚠️ IMPORTANTE:\n'
-  mensaje += '• Guarde estas credenciales en un lugar seguro\n'
-  mensaje += '• El padre puede iniciar sesión para:\n'
-  mensaje += '  - Ver y subir documentos faltantes\n'
-  mensaje += '  - Ver información de sus hijos\n'
-  mensaje += '  - Pagar cuotas mensuales\n\n'
-  mensaje += '📋 Puede copiar estas credenciales ahora'
-
-  alert(mensaje)
 }
 
 // Procesar pago (Paso 5)

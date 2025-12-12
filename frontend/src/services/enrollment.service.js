@@ -73,5 +73,12 @@ export default {
   // Obtener credenciales de acceso
   getCredenciales(id) {
     return api.get(`/enrollments/${id}/credenciales`)
+  },
+
+  // Descargar credenciales en PDF
+  descargarCredenciales(id) {
+    return api.get(`/enrollments/${id}/credenciales/pdf`, {
+      responseType: 'blob'
+    })
   }
 }
