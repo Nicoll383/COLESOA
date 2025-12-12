@@ -320,7 +320,6 @@ class PadreController {
           de.nombre_archivo,
           de.ruta_archivo as archivo_url,
           de.created_at as fecha_subida,
-          de.fecha_revision,
           de.observaciones,
           de.estado
          FROM documentos_estudiante de
