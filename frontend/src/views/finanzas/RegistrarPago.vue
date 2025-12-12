@@ -17,7 +17,7 @@
               @keyup.enter="buscarEstudiante"
               type="text"
               class="search-input"
-              placeholder="Buscar por DNI, código de estudiante o matrícula..."
+              placeholder="Ingrese el DNI del estudiante..."
             />
             <button @click="buscarEstudiante" :disabled="searching" class="btn btn-primary">
               <span v-if="searching">Buscando...</span>
@@ -218,23 +218,23 @@ const formularioValido = computed(() => {
 })
 
 const buscarEstudiante = async () => {
-  if (!searchTerm.value || searchTerm.value.length < 3) {
-    alert('Ingrese al menos 3 caracteres para buscar')
+  if (!searchTerm.value || searchTerm.value.trim().length === 0) {
+    alert('Ingrese un DNI para buscar')
     return
   }
 
   searching.value = true
   try {
-    // Buscar estudiante
+    // Buscar estudiante por DNI exacto
     const response = await api.get('/students', {
-      params: { search: searchTerm.value }
+      params: { dni: searchTerm.value.trim() }
     })
 
     if (response.data.data && response.data.data.length > 0) {
       resultadosBusqueda.value = response.data.data
     } else {
       resultadosBusqueda.value = []
-      alert('No se encontró ningún estudiante con ese criterio')
+      alert('No se encontró ningún estudiante con ese DNI')
     }
   } catch (error) {
     console.error('Error en búsqueda:', error)

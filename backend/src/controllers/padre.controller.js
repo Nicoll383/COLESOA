@@ -62,7 +62,7 @@ class PadreController {
               SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as documentos_pendientes,
               SUM(CASE WHEN estado = 'aceptado' THEN 1 ELSE 0 END) as documentos_aprobados,
               SUM(CASE WHEN estado = 'rechazado' THEN 1 ELSE 0 END) as documentos_rechazados
-            FROM documentos_estudiantes
+            FROM documentos_estudiante
             WHERE matricula_id = ?`,
             [hijo.matricula_id]
           );
@@ -349,7 +349,7 @@ class PadreController {
           dr.descripcion,
           dr.obligatorio,
           dr.tipo_archivo
-         FROM documentos_estudiantes de
+         FROM documentos_estudiante de
          INNER JOIN documentos_requeridos dr ON de.documento_requerido_id = dr.id
          WHERE de.matricula_id = ?
          ORDER BY dr.orden ASC`,
@@ -412,7 +412,7 @@ class PadreController {
       const nombre_archivo = file.originalname;
 
       await connection.execute(
-        `UPDATE documentos_estudiantes
+        `UPDATE documentos_estudiante
          SET archivo_url = ?,
              nombre_archivo = ?,
              estado = 'enviado',
