@@ -319,7 +319,7 @@ class PadreController {
           de.tipo_documento,
           de.nombre_archivo,
           de.ruta_archivo as archivo_url,
-          de.fecha_subida,
+          de.created_at as fecha_subida,
           de.fecha_verificacion as fecha_revision,
           de.observaciones,
           de.estado_verificacion as estado
